@@ -9,7 +9,8 @@ import { AttendanceModule } from './attendance/attendance.module';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb+srv://CDBUser:CDBPass@swp1-clouddb.jxujaha.mongodb.net'),
+    ConfigModule.forRoot({ isGlobal: true }),
+    MongooseModule.forRoot('mongodb+srv://CDBUser:CDBPass@swp1-clouddb.jxujaha.mongodb.net/?retryWrites=true&w=majority&appName=SWP1-DB'),
     ShiftAssignmentModule,
     ShiftModule,
     AttendanceModule
