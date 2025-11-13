@@ -14,4 +14,4 @@ export class Attendance{
 }
 
 export type AttendanceDocument = HydratedDocument<Attendance>
-const AttendanceSchema = SchemaFactory.createForClass(Attendance)
+export const AttendanceSchema = SchemaFactory.createForClass(Attendance)

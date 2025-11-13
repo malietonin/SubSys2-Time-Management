@@ -9,4 +9,4 @@ export class Shift{
         shiftName: string;
 }
 export type ShiftDocument = HydratedDocument<Shift>
-const ShiftSchema = SchemaFactory.createForClass(Shift)
+export const ShiftSchema = SchemaFactory.createForClass(Shift)
