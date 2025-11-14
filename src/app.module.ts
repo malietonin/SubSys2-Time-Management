@@ -7,6 +7,7 @@ import { ShiftAssignmentModule } from './shift-assignment/shift-assignment.modul
 import { ShiftModule } from './shift/shift.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { SchedulingModule } from './scheduling/scheduling.module';
+import { CorrectionRequestModule } from './correction-request/correction-request.module';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { SchedulingModule } from './scheduling/scheduling.module';
     ShiftAssignmentModule,
     ShiftModule,
     AttendanceModule,
-    SchedulingModule 
+    SchedulingModule,
+    CorrectionRequestModule
   ],
   controllers: [AppController],
   providers: [AppService],
