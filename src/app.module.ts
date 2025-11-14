@@ -8,6 +8,7 @@ import { ShiftModule } from './shift/shift.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { SchedulingModule } from './scheduling/scheduling.module';
 import { CorrectionRequestModule } from './correction-request/correction-request.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { CorrectionRequestModule } from './correction-request/correction-request
     ShiftModule,
     AttendanceModule,
     SchedulingModule,
-    CorrectionRequestModule
+    CorrectionRequestModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
