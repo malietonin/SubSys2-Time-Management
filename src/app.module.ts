@@ -12,7 +12,6 @@ import { EscalationModule } from './escalation/escalation.module';
 import { SchedulingModule } from './scheduling/scheduling.module';
 import { CorrectionRequestModule } from './correction-request/correction-request.module';
 import { NotificationModule } from './notification/notification.module';
-import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -26,8 +25,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     EscalationModule,
     SchedulingModule,
     CorrectionRequestModule,
-    NotificationModule,
-    NotificationsModule
+    NotificationModule
   ],
   controllers: [AppController],
   providers: [AppService],
