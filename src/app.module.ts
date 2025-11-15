@@ -6,6 +6,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ShiftAssignmentModule } from './shift-assignment/shift-assignment.module';
 import { ShiftModule } from './shift/shift.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { SchedulingModule } from './scheduling/scheduling.module';
+import { CorrectionRequestModule } from './correction-request/correction-request.module';
+import { NotificationModule } from './notification/notification.module';
 import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
@@ -15,6 +18,9 @@ import { NotificationsModule } from './notifications/notifications.module';
     ShiftAssignmentModule,
     ShiftModule,
     AttendanceModule,
+    SchedulingModule,
+    CorrectionRequestModule,
+    NotificationModule,
     NotificationsModule
   ],
   controllers: [AppController],
