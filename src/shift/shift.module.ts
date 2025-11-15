@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { Shift, ShiftSchema } from './models/shift.model';
+import { ShiftService } from './shift.service';
+import { ShiftController } from './shift.controller';
 
 @Module({
-    imports: [MongooseModule.forFeature([{name: "shift", schema: ShiftSchema}])]
+  controllers: [ShiftController],
+  providers: [ShiftService],
 })
-export class ShiftModule {
-    
-}
+export class ShiftModule {}

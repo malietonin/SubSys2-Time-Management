@@ -17,9 +17,9 @@ export class ShiftAssignment{
         departmentId?:number;
     @Prop()
         positionId?:number;
-    @Prop()
-        status:string;
-    @Prop()
+    @Prop({default: ShiftStatus.Approved})
+        status:ShiftStatus;
+    @Prop({default: Date.now()})
         expiryDate: Date;
         
 }

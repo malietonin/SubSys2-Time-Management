@@ -6,14 +6,16 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ShiftAssignmentModule } from './shift-assignment/shift-assignment.module';
 import { ShiftModule } from './shift/shift.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    MongooseModule.forRoot('mongodb+srv://CDBUser:CDBPass@swp1-clouddb.jxujaha.mongodb.net/?retryWrites=true&w=majority&appName=SWP1-DB'),
+    MongooseModule.forRoot(process.env.DB_URL!),
     ShiftAssignmentModule,
     ShiftModule,
-    AttendanceModule
+    AttendanceModule,
+    NotificationsModule
   ],
   controllers: [AppController],
   providers: [AppService],
