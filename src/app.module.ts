@@ -6,6 +6,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ShiftAssignmentModule } from './shift-assignment/shift-assignment.module';
 import { ShiftModule } from './shift/shift.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { FalsePenaltyModule } from './false-penalty/false-penalty.module';
+import { OvertimeModule } from './overtime/overtime.module';
+import { EscalationModule } from './escalation/escalation.module';
 import { SchedulingModule } from './scheduling/scheduling.module';
 import { CorrectionRequestModule } from './correction-request/correction-request.module';
 import { NotificationModule } from './notification/notification.module';
@@ -18,6 +21,9 @@ import { NotificationsModule } from './notifications/notifications.module';
     ShiftAssignmentModule,
     ShiftModule,
     AttendanceModule,
+    FalsePenaltyModule, 
+    OvertimeModule,
+    EscalationModule,
     SchedulingModule,
     CorrectionRequestModule,
     NotificationModule,
@@ -27,3 +33,4 @@ import { NotificationsModule } from './notifications/notifications.module';
   providers: [AppService],
 })
 export class AppModule {}
+ 
