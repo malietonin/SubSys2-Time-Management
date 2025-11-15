@@ -9,20 +9,25 @@ import { AttendanceModule } from './attendance/attendance.module';
 import { FalsePenaltyModule } from './false-penalty/false-penalty.module';
 import { OvertimeModule } from './overtime/overtime.module';
 import { EscalationModule } from './escalation/escalation.module';
-
-
+import { SchedulingModule } from './scheduling/scheduling.module';
+import { CorrectionRequestModule } from './correction-request/correction-request.module';
+import { NotificationModule } from './notification/notification.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    MongooseModule.forRoot('mongodb+srv://CDBUser:CDBPass@swp1-clouddb.jxujaha.mongodb.net/?retryWrites=true&w=majority&appName=SWP1-DB'),
+    MongooseModule.forRoot(process.env.DB_URL!),
     ShiftAssignmentModule,
     ShiftModule,
     AttendanceModule,
     FalsePenaltyModule, 
     OvertimeModule,
     EscalationModule,
-
+    SchedulingModule,
+    CorrectionRequestModule,
+    NotificationModule,
+    NotificationsModule
   ],
   controllers: [AppController],
   providers: [AppService],
