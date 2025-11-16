@@ -30,6 +30,12 @@ export class Scheduling {
 
     @Prop({ default: true })
     isActive: boolean;
+
+    @Prop()
+    flexInTime?: string;  
+
+    @Prop()
+    flexOutTime?: string; 
 }
 
 export type SchedulingDocument = HydratedDocument<Scheduling>;
