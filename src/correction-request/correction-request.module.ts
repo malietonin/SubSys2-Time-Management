@@ -1,15 +1,9 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { CorrectionRequest, CorrectionRequestSchema } from './models/correction-request.model';
+import { CorrectionRequestService } from './correction-request.service';
+import { CorrectionRequestController } from './correction-request.controller';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: 'CorrectionRequest', schema: CorrectionRequestSchema },
-    ]),
-  ],
-  controllers: [],
-  providers: [],
-  exports: [MongooseModule],
+  controllers: [CorrectionRequestController],
+  providers: [CorrectionRequestService],
 })
 export class CorrectionRequestModule {}

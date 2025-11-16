@@ -15,17 +15,21 @@ export enum NotificationType {
 export class Notification {
   @Prop({required: true, type: mongoose.Schema.Types.ObjectId})
   recipientId: mongoose.Schema.Types.ObjectId;
+
+  @Prop({required: true, default: "Untitled"})
+  title: string;
+
   @Prop({ required: true })
   message: string; 
 
   @Prop({ required: true, enum: NotificationType })
   type: NotificationType; 
 
-  @Prop({ default: false })
-  readStatus: boolean; 
-
   @Prop({ default: Date.now })
   timestamp: Date; 
+
+  @Prop({required: true, type: mongoose.Schema.Types.ObjectId})
+  senderId: mongoose.Schema.Types.ObjectId
 }
 
 export const NotificationSchema = SchemaFactory.createForClass(Notification);

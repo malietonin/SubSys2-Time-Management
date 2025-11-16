@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { Scheduling, SchedulingSchema } from './models/scheduling.model';
+import { SchedulingService } from './scheduling.service';
+import { SchedulingController } from './scheduling.controller';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: "scheduling", schema: SchedulingSchema }])
-  ],
+  controllers: [SchedulingController],
+  providers: [SchedulingService],
 })
 export class SchedulingModule {}
