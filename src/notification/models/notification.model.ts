@@ -1,7 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
 
-export type NotificationDocument = HydratedDocument<Notification>;
 
 export enum NotificationType {
   ShiftExpiry = 'ShiftExpiry',
@@ -33,3 +32,4 @@ export class Notification {
 }
 
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
+export type NotificationDocument = HydratedDocument<Notification>

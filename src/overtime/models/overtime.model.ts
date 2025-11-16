@@ -1,24 +1,22 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import mongoose, {HydratedDocument} from 'mongoose';
 
-export type OvertimeDocument = Overtime & Document;
+
 
 @Schema({ timestamps: true })
 export class Overtime {
-  @Prop({ required: true })
-  employeeId: string;
-
-  @Prop()
-  department?: string;
+  @Prop({required: true, type: [mongoose.Schema.Types.ObjectId]})
+       employeeId: mongoose.Schema.Types.ObjectId;
 
   @Prop({ required: true })
   overtimeType: string;
 
   @Prop({ required: true })
-  thresholds: number;
+  hourThresholds: number;
 
   @Prop({ required: true })
   approvalRequired: boolean;
 }
 
 export const OvertimeSchema = SchemaFactory.createForClass(Overtime);
+export type OvertimeDocument = HydratedDocument<Overtime>

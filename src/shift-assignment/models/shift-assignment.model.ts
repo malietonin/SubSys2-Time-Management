@@ -7,20 +7,28 @@ export enum ShiftStatus{
     Expired = "Expired"
 
 }
-@Schema()
+@Schema({ timestamps: true })
 export class ShiftAssignment{
-    @Prop({required: true})
-        shiftId: number;
-    @Prop()
-        employeeId?: number;
-    @Prop()
-        departmentId?:number;
-    @Prop()
-        positionId?:number;
+    @Prop({required: true, type: mongoose.Schema.Types.ObjectId})
+        shiftId: mongoose.Schema.Types.ObjectId;
+
+    @Prop({required: true, type: mongoose.Schema.Types.ObjectId})
+        employeeId: mongoose.Schema.Types.ObjectId;
+
+    @Prop({required: true, type: mongoose.Schema.Types.ObjectId})
+        departmentId:mongoose.Schema.Types.ObjectId;
+
+    @Prop({required: true, type: mongoose.Schema.Types.ObjectId})
+        positionId?:mongoose.Schema.Types.ObjectId;
+        
     @Prop({default: ShiftStatus.Approved})
         status:ShiftStatus;
+
     @Prop({default: Date.now()})
         expiryDate: Date;
+
+    @Prop() 
+        lastModifiedBy?: mongoose.Schema.Types.ObjectId;
         
 }
 export type ShiftAssignmentDocument = HydratedDocument<ShiftAssignment>
