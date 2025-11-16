@@ -1,15 +1,8 @@
- import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { FalsePenalty, FalsePenaltySchema } from './models/falsePenalty.model';
-import { FalsePenaltyService } from './falsePenalty.service';
-import { FalsePenaltyController } from './falsePenalty.controller';
+import { Module } from '@nestjs/common';
+import { FalsePenaltyService } from './false-penalty.service';
+import { FalsePenaltyController } from './false-penalty.controller';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: FalsePenalty.name, schema: FalsePenaltySchema },
-    ]),
-  ],
   controllers: [FalsePenaltyController],
   providers: [FalsePenaltyService],
 })

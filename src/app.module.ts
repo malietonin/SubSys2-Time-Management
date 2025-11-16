@@ -11,7 +11,14 @@ import { OvertimeModule } from './overtime/overtime.module';
 import { EscalationModule } from './escalation/escalation.module';
 import { SchedulingModule } from './scheduling/scheduling.module';
 import { CorrectionRequestModule } from './correction-request/correction-request.module';
+import { EscalationModule } from './escalation/escalation.module';
 import { NotificationModule } from './notification/notification.module';
+import { FalsePenaltyModule } from './false-penalty/false-penalty.module';
+import { FalseModule } from './penalty/false/false.module';
+import { OvertimeModule } from './overtime/overtime.module';
+import { SchedulingModule } from './scheduling/scheduling.module';
+import { NotificationModule } from './notification/notification.module';
+import { CorrectionRequestModule } from './correction-request/correction-request.module';
 
 @Module({
   imports: [
@@ -25,7 +32,8 @@ import { NotificationModule } from './notification/notification.module';
     EscalationModule,
     SchedulingModule,
     CorrectionRequestModule,
-    NotificationModule
+    NotificationModule,
+    FalseModule
   ],
   controllers: [AppController],
   providers: [AppService],
