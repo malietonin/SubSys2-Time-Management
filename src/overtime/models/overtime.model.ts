@@ -2,7 +2,6 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, {HydratedDocument} from 'mongoose';
 
 
-export type OvertimeDocument = Overtime & Document;
 
 @Schema({ timestamps: true })
 export class Overtime {
@@ -13,11 +12,11 @@ export class Overtime {
   overtimeType: string;
 
   @Prop({ required: true })
-  thresholds: number;
+  hourThresholds: number;
 
   @Prop({ required: true })
   approvalRequired: boolean;
 }
 
 export const OvertimeSchema = SchemaFactory.createForClass(Overtime);
-export type OvertimeSchema = HydratedDocument<OvertimeDocument>
+export type OvertimeDocument = HydratedDocument<Overtime>

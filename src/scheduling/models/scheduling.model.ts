@@ -32,13 +32,13 @@ export class Scheduling {
     isActive: boolean;
 
     @Prop()
-    flexInTime?: string;  
+    flexInTime?: number;  
 
     @Prop()
-    flexOutTime?: string; 
+    flexOutTime?: number; 
 
     @Prop({ default: false })
-    allowMultiplePunches?: boolean;
+    allowMultiplePunches?: boolean; // multiple punches = true, first in last out = false
 }
 
 export type SchedulingDocument = HydratedDocument<Scheduling>;

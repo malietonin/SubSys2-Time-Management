@@ -26,7 +26,7 @@ export class CorrectionRequest {
     status: CorrectionStatus;
     
     @Prop()
-    correctionDate?: Date; 
+    wrongDate?: Date; 
 }
 
 export type CorrectionRequestDocument = HydratedDocument<CorrectionRequest>;
