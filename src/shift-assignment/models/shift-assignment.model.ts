@@ -13,10 +13,10 @@ export class ShiftAssignment{
         shiftId: mongoose.Schema.Types.ObjectId;
 
     @Prop({required: true, type: mongoose.Schema.Types.ObjectId})
-        employeeId?: mongoose.Schema.Types.ObjectId;
+        employeeId: mongoose.Schema.Types.ObjectId;
 
     @Prop({required: true, type: mongoose.Schema.Types.ObjectId})
-        departmentId?:mongoose.Schema.Types.ObjectId;
+        departmentId:mongoose.Schema.Types.ObjectId;
 
     @Prop({required: true, type: mongoose.Schema.Types.ObjectId})
         positionId?:mongoose.Schema.Types.ObjectId;
@@ -26,7 +26,7 @@ export class ShiftAssignment{
 
     @Prop({default: Date.now()})
         expiryDate: Date;
-        
+
     @Prop() 
         lastModifiedBy?: mongoose.Schema.Types.ObjectId;
         
