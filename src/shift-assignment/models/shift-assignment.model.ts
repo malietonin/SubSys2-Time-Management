@@ -7,7 +7,7 @@ export enum ShiftStatus{
     Expired = "Expired"
 
 }
-@Schema()
+@Schema({ timestamps: true })
 export class ShiftAssignment{
     @Prop({required: true})
         shiftId: number;
@@ -21,6 +21,8 @@ export class ShiftAssignment{
         status:ShiftStatus;
     @Prop({default: Date.now()})
         expiryDate: Date;
+    @Prop() 
+        lastModifiedBy?: mongoose.Schema.Types.ObjectId;
         
 }
 export type ShiftAssignmentDocument = HydratedDocument<ShiftAssignment>
