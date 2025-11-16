@@ -36,6 +36,9 @@ export class Scheduling {
 
     @Prop()
     flexOutTime?: string; 
+
+    @Prop({ default: false })
+    allowMultiplePunches?: boolean;
 }
 
 export type SchedulingDocument = HydratedDocument<Scheduling>;
