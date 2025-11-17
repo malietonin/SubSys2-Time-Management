@@ -25,8 +25,11 @@ export class CorrectionRequest {
     @Prop({ enum: CorrectionStatus, default: CorrectionStatus.Pending })
     status: CorrectionStatus;
     
-    @Prop()
+    @Prop({ required: true })
     wrongDate?: Date; 
+
+    @Prop({ required: true , default: Date.now})
+    DateIssued?: Date; 
 }
 
 export type CorrectionRequestDocument = HydratedDocument<CorrectionRequest>;

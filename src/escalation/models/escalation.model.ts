@@ -24,8 +24,8 @@ export class Escalation {
    @Prop({ enum: EscalationStatus, default: EscalationStatus.Pending })
       status: EscalationStatus;
 
-  @Prop({ required: true })
-  escalationDate: Date;
+   @Prop({ required: true })
+      escalationDate: Date;
 }
 
 export const EscalationSchema = SchemaFactory.createForClass(Escalation);
