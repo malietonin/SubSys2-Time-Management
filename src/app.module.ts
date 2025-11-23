@@ -1,34 +1,24 @@
+import { MongooseModule } from '@nestjs/mongoose';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { MongooseModule } from '@nestjs/mongoose';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ShiftAssignmentModule } from './shift-assignment/shift-assignment.module';
-import { ShiftModule } from './shift/shift.module';
-import { AttendanceModule } from './attendance/attendance.module';
-import { FalsePenaltyModule } from './false-penalty/false-penalty.module';
-import { OvertimeModule } from './overtime/overtime.module';
-import { EscalationModule } from './escalation/escalation.module';
-import { SchedulingModule } from './scheduling/scheduling.module';
-import { CorrectionRequestModule } from './correction-request/correction-request.module';
-import { NotificationModule } from './notification/notification.module';
+import { TimeManagementModule } from './time-management/time-management.module';
+import { RecruitmentModule } from './recruitment/recruitment.module';
+import { LeavesModule } from './leaves/leaves.module';
+
+import { PayrollTrackingModule } from './payroll-tracking/payroll-tracking.module';
+import { EmployeeProfileModule } from './employee-profile/employee-profile.module';
+import { OrganizationStructureModule } from './organization-structure/organization-structure.module';
+import { PerformanceModule } from './performance/performance.module';
+import { PayrollConfigurationModule } from './payroll-configuration/payroll-configuration.module';
+import { PayrollExecutionModule } from './payroll-execution/payroll-execution.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+  imports: [ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRoot(process.env.DB_URL!),
-    ShiftAssignmentModule,
-    ShiftModule,
-    AttendanceModule,
-    FalsePenaltyModule, 
-    OvertimeModule,
-    EscalationModule,
-    SchedulingModule,
-    CorrectionRequestModule,
-    NotificationModule,
-  ],
+    TimeManagementModule, RecruitmentModule, LeavesModule, PayrollExecutionModule, PayrollConfigurationModule, PayrollTrackingModule, EmployeeProfileModule, OrganizationStructureModule, PerformanceModule],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
- 
