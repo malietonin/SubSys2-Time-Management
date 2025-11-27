@@ -1,38 +1,16 @@
-import { SchemaFactory, Schema, Prop} from "@nestjs/mongoose";
-import { Types } from "mongoose";
-import { HydratedDocument } from "mongoose";
-import { PunchPolicy } from "./enums/index";
+import { Schema, Prop, SchemaFactory } from "@nestjs/mongoose";
 
-export type ShiftDocument = HydratedDocument<Shift>;
+import { HydratedDocument } from "mongoose";
+
+export type ShiftTypeDocument = HydratedDocument<ShiftType>;
 
 @Schema()
-export class Shift{
+export class ShiftType {
     @Prop({required: true})
-    name: string;
-    
-    @Prop({type: Types.ObjectId, ref: 'ShiftType', required: true})
-    shiftType: Types.ObjectId;
+    name: string 
 
-    @Prop({required: true})
-    startTime: string;
-
-    @Prop({required: true})
-    endTime: string;
-
-    @Prop({enum: PunchPolicy, default: PunchPolicy.FIRST_LAST})
-    punchPolicy: PunchPolicy;
-
-    @Prop({ default: 0 })
-    graceInMinutes: number;
-
-    @Prop({ default: 0 })
-    graceOutMinutes: number;
-
-    @Prop({ default: false })
-    requiresApprovalForOvertime: boolean;
-
-    @Prop({ default: true })
+    @Prop({default: true})
     active: boolean;
 }
 
-export const ShiftSchema = SchemaFactory.createForClass(Shift)
+export const ShiftTypeSchema = SchemaFactory.createForClass(ShiftType);

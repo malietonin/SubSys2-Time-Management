@@ -1,8 +1,8 @@
+import { NotificationLogCreateDto } from './../dtos/notification-log-create-dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { NotificationLog, NotificationLogDocument, NotificationLogSchema } from './../models/notification-log.schema';
-import { BadRequestException, Injectable } from "@nestjs/common";
-import { Model } from 'mongoose';
-import { NotificationLogCreateDto } from '../dtos/notification-log-create-dto';
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { Model, Types } from 'mongoose';
 
 @Injectable()
 export class NotificationLogService{
@@ -23,5 +23,13 @@ export class NotificationLogService{
             message:"Notification sent successfully!",
             data: notification
         }
+    }
+    async getAllNotifications():Promise<NotificationLog[]>{
+        const notifications = await this.notificationLogModel.find()
+        if(!notifications) throw new NotFoundException("No notifications found!")
+        return notifications;
+    }
+    async getEmployeeNotifications(recepientId:Types.ObjectId){
+        return this.notificationLogModel.find({to: recepientId})
     }
 }

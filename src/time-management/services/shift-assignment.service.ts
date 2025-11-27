@@ -50,6 +50,8 @@ export class ShiftAssignmentService{
             const position = await this.positionModel.findById(assignData.positionId)
             if(!position) throw new NotFoundException("Position not found!")
         }
+        const shift = await this.shiftModel.findById(assignData.shiftId)
+        if(!shift) throw new NotFoundException("Shift not found!")
         //Put the data in an object and pass it to the shift assignment model using create function
     }
     
