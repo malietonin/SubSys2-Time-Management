@@ -20,6 +20,7 @@ import { ShiftAssignmentService } from './services/shift-assignment.service';
 import { EmployeeProfile, EmployeeProfileSchema } from '../employee-profile/models/employee-profile.schema';
 import { Department, DepartmentSchema } from '../organization-structure/models/department.schema';
 import { Position, PositionSchema } from '../organization-structure/models/position.schema';
+import { ShiftTypeService } from './services/shift-type.service';
 
 
 
@@ -45,6 +46,6 @@ import { Position, PositionSchema } from '../organization-structure/models/posit
 
   ],
   controllers: [TimeManagementController],
-  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService]
+  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ShiftTypeService]
 })
 export class TimeManagementModule {}
