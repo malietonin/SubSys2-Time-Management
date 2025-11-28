@@ -23,6 +23,7 @@ import { Position, PositionSchema } from '../organization-structure/models/posit
 import { ScheduleRuleService } from './services/schedule-rule.service';
 import { AttendanceRecordService } from './services/attendance-record.service';
 import { AttendanceCorrectionRequestService } from './services/attendance-correction-request.service';  
+import { HolidayService } from './services/holiday.service';
 
 
 
@@ -50,6 +51,6 @@ import { AttendanceCorrectionRequestService } from './services/attendance-correc
 
   ],
   controllers: [TimeManagementController],
-  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, AttendanceRecordService, AttendanceCorrectionRequestService],
+  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, AttendanceRecordService, AttendanceCorrectionRequestService, HolidayService],
 })
 export class TimeManagementModule {}

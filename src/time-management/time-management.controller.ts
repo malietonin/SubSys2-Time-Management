@@ -8,6 +8,8 @@ import { NotificationLogCreateDto } from './dtos/notification-log-create-dto';
 import { ScheduleRuleCreateDto } from './dtos/schedule-rule-create-dto';
 import { ScheduleRuleUpdateDto } from './dtos/schedule-rule-update-dto';
 import { AttendanceCorrectionRequestDto, UpdateAttendanceCorrectionRequestDto } from './dtos/create-attendance-correction-request-dto';
+import { CreateHolidayDto } from './dtos/holiday-create-dto';
+import { HolidayService } from './services/holiday.service';
 
 import { Types } from 'mongoose';
 
@@ -18,6 +20,7 @@ export class TimeManagementController {
         private readonly notificationLogService: NotificationLogService,
         private readonly scheduleRuleService: ScheduleRuleService,
         private readonly attendanceCorrectionRequestService: AttendanceCorrectionRequestService,
+        private readonly holidayService: HolidayService,
     ){}
 
     // Shift Assignment Functions
@@ -143,4 +146,27 @@ export class TimeManagementController {
         data: result
     };
     }
+
+    // Holiday Functions 
+    @Post('holiday')
+    async createHoliday(@Body() dto: CreateHolidayDto) {
+    const result = await this.holidayService.createHoliday(dto);
+    return {
+        success: true,
+        message: 'Holiday created successfully!',
+        data: result
+    };
+}
+
+    @Get('holiday')
+    async getAllHolidays() {
+    const result = await this.holidayService.getAllHolidays();
+    return {
+        success: true,
+        message: 'Holidays fetched successfully!',
+        data: result
+    };
+
+
     }
+}
