@@ -21,6 +21,8 @@ import { EmployeeProfile, EmployeeProfileSchema } from '../employee-profile/mode
 import { Department, DepartmentSchema } from '../organization-structure/models/department.schema';
 import { Position, PositionSchema } from '../organization-structure/models/position.schema';
 import { ScheduleRuleService } from './services/schedule-rule.service';
+import { AttendanceRecordService } from './services/attendance-record.service';
+import { AttendanceCorrectionRequestService } from './services/attendance-correction-request.service';  
 
 
 
@@ -41,12 +43,13 @@ import { ScheduleRuleService } from './services/schedule-rule.service';
     { name: EmployeeProfile.name, schema:EmployeeProfileSchema},
     { name: Department.name, schema: DepartmentSchema},
     { name: Position.name, schema: PositionSchema}
+    
   ]),
   EmployeeProfileModule,
   OrganizationStructureModule
 
   ],
   controllers: [TimeManagementController],
-  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService]
+  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, AttendanceRecordService, AttendanceCorrectionRequestService],
 })
 export class TimeManagementModule {}
