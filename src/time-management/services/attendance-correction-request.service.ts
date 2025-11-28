@@ -85,5 +85,33 @@ export class AttendanceCorrectionRequestService {
     };
   }
 
+  async listEmployeeCorrectionRequests(employeeId: string) {
+    return await this.requestModel
+      .find({ employeeId })
+      .populate('attendanceRecord')
+      .exec();
+  }
+
+  async autoEscalatePendingCorrections() {
+    
+    const cutoff = new Date();
+    cutoff.setHours(cutoff.getHours() - 48);
+  
+    const updated = await this.requestModel.updateMany(
+      {
+        status: CorrectionRequestStatus.IN_REVIEW,
+        createdAt: { $lt: cutoff }
+      },
+      {
+        $set: { status: CorrectionRequestStatus.ESCALATED }
+      }
+    );
+  
+    return {
+      escalatedCount: updated.modifiedCount
+    };
+  }
+  
+
  
 }

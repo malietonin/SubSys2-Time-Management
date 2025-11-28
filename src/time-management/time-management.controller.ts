@@ -169,4 +169,31 @@ export class TimeManagementController {
 
 
     }
+
+    @Get('attendance-correction-request/employee/:employeeId')
+    async listEmployeeRequests(@Param('employeeId') employeeId: string) {
+    const result = await this.attendanceCorrectionRequestService
+        .listEmployeeCorrectionRequests(employeeId);
+
+    return {
+        success: true,
+        message: 'Employee correction requests fetched.',
+        data: result
+    };
+    }
+
+    @Post('attendance-correction-request/auto-escalate')
+    async autoEscalate() {
+    const result = await this.attendanceCorrectionRequestService
+        .autoEscalatePendingCorrections();
+
+    return {
+        success: true,
+        message: 'Pending correction requests auto-escalated.',
+        data: result
+    };
+}
+
+
+
 }
