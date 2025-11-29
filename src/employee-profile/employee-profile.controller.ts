@@ -227,7 +227,7 @@ export class EmployeeProfileController {
   })
   @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Profile not found' })
-  async getEmployeeById(@Param('employeeId') employeeId: Types.ObjectId) {
+  async getEmployeeById(@Param('employeeId') employeeId: string) {
     return this.employeeProfileService.getMyProfile(employeeId);
   }
 

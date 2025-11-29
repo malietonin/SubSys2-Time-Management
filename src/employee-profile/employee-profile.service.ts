@@ -88,7 +88,7 @@ export class EmployeeProfileService {
    * US-E2-04: View full employee profile
    * Retrieves employee profile with appraisal history from Performance module
    */
-  async getMyProfile(employeeId: Types.ObjectId): Promise<any> {
+  async getMyProfile(employeeId: string): Promise<any> {
     const profile = await this.employeeProfileModel
       .findById(employeeId)
       .populate('primaryPositionId')
@@ -569,86 +569,86 @@ export class EmployeeProfileService {
   /**
    * Validate file for upload
    */
-  // validateFile(file: Express.Multer.File): void {
-  //   if (!file) {
-  //     throw new BadRequestException('No file provided');
-  //   }
+  validateFile(file: Express.Multer.File): void {
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
 
-  //   // Check file size
-  //   if (file.size > this.maxFileSize) {
-  //     throw new BadRequestException(
-  //       `File size exceeds maximum allowed size of ${this.maxFileSize / (1024 * 1024)}MB`,
-  //     );
-  //   }
+    // Check file size
+    if (file.size > this.maxFileSize) {
+      throw new BadRequestException(
+        `File size exceeds maximum allowed size of ${this.maxFileSize / (1024 * 1024)}MB`,
+      );
+    }
 
-  //   // Check mime type
-  //   if (!this.allowedMimeTypes.includes(file.mimetype)) {
-  //     throw new BadRequestException(
-  //       `File type ${file.mimetype} is not allowed. Allowed types: ${this.allowedMimeTypes.join(', ')}`,
-  //     );
-  //   }
-  // }
+    // Check mime type
+    if (!this.allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        `File type ${file.mimetype} is not allowed. Allowed types: ${this.allowedMimeTypes.join(', ')}`,
+      );
+    }
+  }
 
-  // /**
-  //  * Generate unique filename
-  //  */
-  // generateFilename(originalName: string, employeeId: string): string {
-  //   const timestamp = Date.now();
-  //   const randomStr = Math.random().toString(36).substring(2, 15);
-  //   const ext = extname(originalName);
-  //   return `profile_${employeeId}_${timestamp}_${randomStr}${ext}`;
-  // }
+  /**
+   * Generate unique filename
+   */
+  generateFilename(originalName: string, employeeId: string): string {
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 15);
+    const ext = extname(originalName);
+    return `profile_${employeeId}_${timestamp}_${randomStr}${ext}`;
+  }
 
-  // /**
-  //  * Save uploaded file
-  //  */
-  // async saveFile(
-  //   file: Express.Multer.File,
-  //   employeeId: string,
-  // ): Promise<string> {
-  //   this.validateFile(file);
+  /**
+   * Save uploaded file
+   */
+  async saveFile(
+    file: Express.Multer.File,
+    employeeId: string,
+  ): Promise<string> {
+    this.validateFile(file);
 
-  //   const filename = this.generateFilename(file.originalname, employeeId);
-  //   const filePath = path.join(this.uploadPath, filename);
+    const filename = this.generateFilename(file.originalname, employeeId);
+    const filePath = path.join(this.uploadPath, filename);
 
-  //   // Write file to disk
-  //   await fs.promises.writeFile(filePath, file.buffer);
+    // Write file to disk
+    await fs.promises.writeFile(filePath, file.buffer);
 
-  //   // Return URL path
-  //   return `/uploads/profiles/${filename}`;
-  // }
+    // Return URL path
+    return `/uploads/profiles/${filename}`;
+  }
 
   /**
    * Delete old profile picture
    */
-  // async deleteFile(fileUrl: string): Promise<void> {
-  //   try {
-  //     if (!fileUrl || !fileUrl.startsWith('/uploads/profiles/')) {
-  //       return;
-  //     }
+  async deleteFile(fileUrl: string): Promise<void> {
+    try {
+      if (!fileUrl || !fileUrl.startsWith('/uploads/profiles/')) {
+        return;
+      }
 
-  //     const filename = path.basename(fileUrl);
-  //     const filePath = path.join(this.uploadPath, filename);
+      const filename = path.basename(fileUrl);
+      const filePath = path.join(this.uploadPath, filename);
 
-  //     if (fs.existsSync(filePath)) {
-  //       await fs.promises.unlink(filePath);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error deleting file:', error);
-  //     // Don't throw error, just log it
-  //   }
-  // }
+      if (fs.existsSync(filePath)) {
+        await fs.promises.unlink(filePath);
+      }
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      // Don't throw error, just log it
+    }
+  }
 
   /**
    * Get file buffer (for serving files)
    */
-  // async getFile(filename: string): Promise<Buffer> {
-  //   const filePath = path.join(this.uploadPath, filename);
+  async getFile(filename: string): Promise<Buffer> {
+    const filePath = path.join(this.uploadPath, filename);
 
-  //   if (!fs.existsSync(filePath)) {
-  //     throw new BadRequestException('File not found');
-  //   }
+    if (!fs.existsSync(filePath)) {
+      throw new BadRequestException('File not found');
+    }
 
-  //   return fs.promises.readFile(filePath);
-  // }
+    return fs.promises.readFile(filePath);
+  }
 }
