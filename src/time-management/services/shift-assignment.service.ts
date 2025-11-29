@@ -1,5 +1,6 @@
+import { EmployeeProfileService } from './../../employee-profile/employee-profile.service';
 import { ShiftAssignmentCreateDto } from './../dtos/shift-assignment-create-dto';
-import { ShiftAssignmentDocument, ShiftAssignmentSchema } from './../models/shift-assignment.schema';
+import { ShiftAssignmentDocument } from './../models/shift-assignment.schema';
 import { BadRequestException, Body, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { ShiftAssignment } from "../models/shift-assignment.schema";
@@ -8,7 +9,6 @@ import { EmployeeProfile, EmployeeProfileDocument } from '../../employee-profile
 import { Department, DepartmentDocument } from '../../organization-structure/models/department.schema';
 import { Position, PositionDocument } from '../../organization-structure/models/position.schema';
 import { Shift, ShiftDocument } from '../models/shift.schema';
-import { throws } from 'assert';
 
 @Injectable()
 export class ShiftAssignmentService{
@@ -22,7 +22,10 @@ export class ShiftAssignmentService{
         @InjectModel(Position.name)
         private positionModel:Model<PositionDocument>,
         @InjectModel(Shift.name)
-        private shiftModel: Model<ShiftDocument>
+        private shiftModel: Model<ShiftDocument>,
+        private employeeProfileService:EmployeeProfileService
+        
+        
 ){}
     async assignShift(assignData:ShiftAssignmentCreateDto){
         if(!assignData.employeeId&&!assignData.departmentId&&!assignData.positionId){
@@ -39,7 +42,7 @@ export class ShiftAssignmentService{
         }
 
         if(assignData.employeeId){
-            const employee = await this.employeeProfileModel.findById(assignData.employeeId)
+            const employee = await this.employeeProfileService.getMyProfile(assignData.employeeId)
             if(!employee) throw new NotFoundException("Employee not found!")
         }
         if(assignData.departmentId){

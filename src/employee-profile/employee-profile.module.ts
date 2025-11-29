@@ -19,6 +19,8 @@ import {
   EmployeeQualification,
   EmployeeQualificationSchema,
 } from './models/qualification.schema';
+import { PerformanceModule } from '../performance/performance.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -32,8 +34,11 @@ import {
       },
       { name: EmployeeQualification.name, schema: EmployeeQualificationSchema },
     ]),
+    PerformanceModule,
+    AuthModule,
   ],
   controllers: [EmployeeProfileController],
   providers: [EmployeeProfileService],
+  exports: [EmployeeProfileService]
 })
 export class EmployeeProfileModule {}
