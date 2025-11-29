@@ -1,4 +1,5 @@
 import { NotificationLogService } from './services/notification-log.service';
+import { Controller, Post, Body, Delete, Param, Get } from '@nestjs/common';
 import { ShiftAssignmentService } from './services/shift-assignment.service';
 import { ScheduleRuleService } from './services/schedule-rule.service';
 import { BadRequestException, Controller, Post, Body, Get, Param, Patch, Delete, Put } from '@nestjs/common';
@@ -9,6 +10,9 @@ import { ScheduleRuleUpdateDto } from './dtos/schedule-rule-update-dto';
 import { Types } from 'mongoose';
 import { ShiftAssignmentStatus } from './models/enums';
 import { ShiftAssignmentUpdateDto } from './dtos/shift-assignment-update-dto';
+import { ShiftTypeCreateDto } from './dtos/shift-type-create-dto';
+import { ShiftTypeService } from './services/shift-type.service';
+import { Types } from 'mongoose';
 
 @Controller('time-management')
 export class TimeManagementController {
@@ -16,6 +20,7 @@ export class TimeManagementController {
         private readonly shiftAssignmentService: ShiftAssignmentService,
         private readonly notificationLogService: NotificationLogService,
         private readonly scheduleRuleService: ScheduleRuleService
+        private shiftTypeService:ShiftTypeService
     ){}
 
     // Shift Assignment Functions (DONE -Authorization)
@@ -44,11 +49,18 @@ export class TimeManagementController {
         return await this.shiftAssignmentService.extendShiftAssignment(dto,shiftAssignmentId)
     }
 
-    // Notification Log Functions
-    @Post('notification')
-    async sendNotification(@Body() notifData: NotificationLogCreateDto) {
-        const result = await this.notificationLogService.sendNotification(notifData);
-        return result;
+    //Notification Log Functions
+    @Post('notification-log')
+    async sendNotification(@Body()notifData:NotificationLogCreateDto){
+        return this.notificationLogService.sendNotification(notifData);
+    }
+    @Get('notification-log')
+    async getAllNotifications(){
+        return this.notificationLogService.getAllNotifications()
+    }
+    @Get('notification-log/:id')
+    async getEmployeeNotifications(@Param('id') employeeId:string){
+        return this.notificationLogService.getEmployeeNotifications(employeeId)
     }
 
     // Schedule Rule Functions
@@ -94,5 +106,28 @@ export class TimeManagementController {
     async deleteScheduleRule(@Param('id') id: string) {
         const result = await this.scheduleRuleService.deleteScheduleRule(new Types.ObjectId(id));
         return result;
+    async assignShift(@Body() assignData: ShiftAssignmentCreateDto){
+        return this.shiftAssignmentService.assignShift(assignData);
     }
+
+    //Shift Type Functions
+    @Post('shift-type')
+    async createShiftType(@Body()shiftTypeData:ShiftTypeCreateDto){
+        return this.shiftTypeService.createShiftType(shiftTypeData);
+    }
+    @Get('shift-type')
+    async getAllShiftTypes(){
+        return this.shiftTypeService.getAllShiftTypes();
+    }
+    @Get('shift-type/:id')
+    async getShiftTypeById(@Param('id')shiftTypeId:string){
+        return this.shiftTypeService.getShiftTypeById(shiftTypeId)
+    }
+    @Delete('shift-type/:id')
+    async deleteShiftType(@Param('id')shiftTypeId:string){
+        return this.shiftTypeService.deleteShiftType(shiftTypeId)
+    }
+
 }
+
+
