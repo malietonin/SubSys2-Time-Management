@@ -63,7 +63,7 @@ export class ShiftAssignmentService{
             message: "Shift Assigned Successfully!",
             data: shiftAssignment
         }
-    },
+    }
     async updateShiftAssignment(newStatus:ShiftAssignmentStatus,shiftAssignmentId:string){
         if(!Object.values(ShiftAssignmentStatus).includes(newStatus)){
             throw new BadRequestException(`Status: ${newStatus} is invalid!`)
