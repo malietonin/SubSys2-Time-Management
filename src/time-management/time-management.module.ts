@@ -22,6 +22,7 @@ import { Department, DepartmentSchema } from '../organization-structure/models/d
 import { Position, PositionSchema } from '../organization-structure/models/position.schema';
 import { ScheduleRuleService } from './services/schedule-rule.service';
 import { LatenessRuleService } from './services/lateness-rule.service';
+import { OvertimeRuleService } from './services/overtime-rule.service';
 
 
 
@@ -49,6 +50,6 @@ import { LatenessRuleService } from './services/lateness-rule.service';
 
   ],
   controllers: [TimeManagementController],
-  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, LatenessRuleService]
+  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, LatenessRuleService , OvertimeRuleService]
 })
 export class TimeManagementModule {}

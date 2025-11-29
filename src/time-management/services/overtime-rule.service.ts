@@ -5,6 +5,7 @@ import { Model } from 'mongoose';
 import { OvertimeRule, OvertimeRuleDocument } from '../models/overtime-rule.schema';
 import { OvertimeRuleCreateDto } from '../dtos/overtime-rule-create.dto';
 import { OvertimeRuleUpdateDto } from '../dtos/overtime-rule-update.dto';
+import { ApplyOvertimeDto } from '../dtos/apply-overtime.dto';
 
 @Injectable()
 export class OvertimeRuleService {
@@ -65,4 +66,48 @@ export class OvertimeRuleService {
       message: 'Overtime rule deleted successfully',
     };
   }
+  async applyOvertimeCalculation(dto: ApplyOvertimeDto) {
+  const { employeeId, date, workedHours, scheduledHours } = dto;
+
+  // Step 1: Get the active rule
+  const rule = await this.overtimeRuleModel.findOne({ active: true });
+  if (!rule) {
+    throw new NotFoundException('No active overtime rule found');
+  }
+
+  // Step 2: Compute raw overtime
+  const overtimeHours = Math.max(0, workedHours - scheduledHours);
+
+  // Step 3: If no overtime → early exit
+  if (overtimeHours === 0) {
+    return {
+      success: true,
+      message: "No overtime worked",
+      data: {
+        employeeId,
+        date,
+        overtimeHours: 0,
+        approved: false,
+        ruleUsed: rule.name
+      }
+    };
+  }
+
+  // Step 4: Approval logic
+  const isApproved = rule.approved ? true : false;
+
+  // Step 5: Return final result
+  return {
+    success: true,
+    message: "Overtime calculation completed",
+    data: {
+      employeeId,
+      date,
+      overtimeHours,
+      approved: isApproved,
+      ruleUsed: rule.name
+    }
+  };
+}
+
 }

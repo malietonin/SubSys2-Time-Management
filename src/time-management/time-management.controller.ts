@@ -9,7 +9,11 @@ import { ShiftAssignmentCreateDto } from './dtos/shift-assignment-create-dto';
 import { NotificationLogCreateDto } from './dtos/notification-log-create-dto';
 import { ScheduleRuleCreateDto } from './dtos/schedule-rule-create-dto';
 import { ScheduleRuleUpdateDto } from './dtos/schedule-rule-update-dto';
- 
+import { OvertimeRuleCreateDto } from './dtos/overtime-rule-create.dto';
+import { OvertimeRuleUpdateDto } from './dtos/overtime-rule-update.dto';
+import { OvertimeRuleService } from './services/overtime-rule.service';
+import { ApplyOvertimeDto } from './dtos/apply-overtime.dto';
+
 
 import { Types } from 'mongoose';
 
@@ -19,7 +23,8 @@ export class TimeManagementController {
     private readonly shiftAssignmentService: ShiftAssignmentService,
     private readonly notificationLogService: NotificationLogService,
     private readonly scheduleRuleService: ScheduleRuleService,
-    private readonly latenessRuleService: LatenessRuleService
+    private readonly latenessRuleService: LatenessRuleService,
+    private readonly overtimeRuleService: OvertimeRuleService, 
 ){}
 
     // Shift Assignment Functions
@@ -129,40 +134,45 @@ async detectRepeated(
 ) {
   return this.latenessRuleService.detectRepeatedLateness(employeeId);
 }
-// ===== OVERTIME RULES =====
+ 
 
 @Post('overtime-rule')
 async createOvertimeRule(@Body() dto: OvertimeRuleCreateDto) {
-  return this.overtimeRuleService.createOvertimeRule(dto);
+    return this.overtimeRuleService.createOvertimeRule(dto);
 }
 
 @Get('overtime-rule')
 async listOvertimeRules() {
-  return {
-    success: true,
-    data: await this.overtimeRuleService.listOvertimeRules(),
-  };
+    return {
+        success: true,
+        data: await this.overtimeRuleService.listOvertimeRules(),
+    };
 }
 
 @Get('overtime-rule/:id')
 async getOvertimeRuleById(@Param('id') id: string) {
-  const rule = await this.overtimeRuleService.findById(id);
-  if (!rule) throw new BadRequestException('Rule not found');
-
-  return { success: true, data: rule };
+    const rule = await this.overtimeRuleService.findById(id);
+    if (!rule) throw new BadRequestException('Rule not found');
+    return { success: true, data: rule };
 }
 
 @Patch('overtime-rule/:id')
 async updateOvertimeRule(
-  @Param('id') id: string,
-  @Body() dto: OvertimeRuleUpdateDto
+    @Param('id') id: string,
+    @Body() dto: OvertimeRuleUpdateDto
 ) {
-  return this.overtimeRuleService.updateOvertimeRule(id, dto);
+    return this.overtimeRuleService.updateOvertimeRule(id, dto);
 }
 
 @Delete('overtime-rule/:id')
 async deleteOvertimeRule(@Param('id') id: string) {
-  return this.overtimeRuleService.deleteOvertimeRule(id);
+    return this.overtimeRuleService.deleteOvertimeRule(id);
 }
+ 
+@Post('overtime-rule/apply')
+async applyOvertime(@Body() dto: ApplyOvertimeDto) {
+  return this.overtimeRuleService.applyOvertimeCalculation(dto);
+}
+
 
 }
