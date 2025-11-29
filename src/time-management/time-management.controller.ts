@@ -123,5 +123,46 @@ async applyPenalty(
   return this.latenessRuleService.applyLatenessPenalty(actualMinutesLate, id);
 }
 
+@Get('lateness-rule/repeated/:employeeId')
+async detectRepeated(
+  @Param('employeeId') employeeId: string
+) {
+  return this.latenessRuleService.detectRepeatedLateness(employeeId);
+}
+// ===== OVERTIME RULES =====
+
+@Post('overtime-rule')
+async createOvertimeRule(@Body() dto: OvertimeRuleCreateDto) {
+  return this.overtimeRuleService.createOvertimeRule(dto);
+}
+
+@Get('overtime-rule')
+async listOvertimeRules() {
+  return {
+    success: true,
+    data: await this.overtimeRuleService.listOvertimeRules(),
+  };
+}
+
+@Get('overtime-rule/:id')
+async getOvertimeRuleById(@Param('id') id: string) {
+  const rule = await this.overtimeRuleService.findById(id);
+  if (!rule) throw new BadRequestException('Rule not found');
+
+  return { success: true, data: rule };
+}
+
+@Patch('overtime-rule/:id')
+async updateOvertimeRule(
+  @Param('id') id: string,
+  @Body() dto: OvertimeRuleUpdateDto
+) {
+  return this.overtimeRuleService.updateOvertimeRule(id, dto);
+}
+
+@Delete('overtime-rule/:id')
+async deleteOvertimeRule(@Param('id') id: string) {
+  return this.overtimeRuleService.deleteOvertimeRule(id);
+}
 
 }

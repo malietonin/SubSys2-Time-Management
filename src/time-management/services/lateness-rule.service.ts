@@ -88,4 +88,38 @@ export class LatenessRuleService {
             calculatedPenalty: penalty,
         };
     }
+     
+async detectRepeatedLateness(employeeId: string) {
+    
+    const records = await this.latenessRuleModel.db
+        .collection('attendancerecords')
+        .find({ employeeId })
+        .toArray();
+
+    if (!records.length) {
+        return {
+            success: true,
+            message: "No attendance records found",
+            repeatedLateness: 0,
+        };
+    }
+
+    
+    const latenessCount = records.filter(r => {
+        return r.actualArrivalMinutes > r.allowedArrivalMinutes;
+    }).length;
+
+     
+    const isRepeated = latenessCount >= 3;  
+
+    return {
+        success: true,
+        repeatedLateness: latenessCount,
+        isRepeated,
+        action: isRepeated
+            ? "Escalate to HR for disciplinary action"
+            : "No escalation required",
+    };
+}
+
 }
