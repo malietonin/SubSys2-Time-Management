@@ -11,6 +11,7 @@ import { Position, PositionDocument } from '../../organization-structure/models/
 import { Shift, ShiftDocument } from '../models/shift.schema';
 import { OrganizationStructureService } from '../../organization-structure/organization-structure.service';
 import { ShiftAssignmentStatus } from '../models/enums';
+import { ShiftAssignmentUpdateDto } from '../dtos/shift-assignment-update-dto';
 
 @Injectable()
 export class ShiftAssignmentService{
@@ -102,18 +103,39 @@ export class ShiftAssignmentService{
             data: shiftAssignments
         }
     }
-    async extendShiftAssignment(endDate:Date,shiftAssignmentId: string){
+    async extendShiftAssignment(dto:ShiftAssignmentUpdateDto,shiftAssignmentId: string){
+        const newEndDate = new Date(dto.endDate);
+        if(isNaN(newEndDate.getTime())) throw new BadRequestException("Invalid date format. Use ISO format like YYYY-MM-DD.")
         // Check if the provided date is in the future
-        if (endDate <= new Date()) {
+        if (newEndDate <= new Date()) {
             throw new BadRequestException('The extension date must be in the future.');
         }
         const shiftAssignment = await this.shiftAssignmentModel.findById(shiftAssignmentId)
         if(!shiftAssignment) throw new NotFoundException('Shift Assignment not found!')
+        shiftAssignment.endDate = newEndDate
+        await shiftAssignment.save()
+    
         return{
             success:true,
             message: "Shift assignment expiry date extended!",
             data:shiftAssignment
         }
+    }
+    async detectUpcomingExpiry(){
+        const shiftAssignments = await this.shiftAssignmentModel.find()
+        const near_days = 3
+        const now = Date.now()
+        if(!shiftAssignments) throw new NotFoundException('Shift assignments not found!')
+        const processed = shiftAssignments.map(s=>{
+            const diffDays = (s.endDate!.getTime() - now) / (1000*60*60*24)
+            
+        })
+        return{
+            success:true,
+            message: "Shift Assignments nearing expiry returned!",
+            data:processed
+        }
+        
     }
     
 }

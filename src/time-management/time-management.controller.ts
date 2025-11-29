@@ -1,12 +1,14 @@
 import { NotificationLogService } from './services/notification-log.service';
 import { ShiftAssignmentService } from './services/shift-assignment.service';
 import { ScheduleRuleService } from './services/schedule-rule.service';
-import { BadRequestException, Controller, Post, Body, Get, Param, Patch, Delete } from '@nestjs/common';
+import { BadRequestException, Controller, Post, Body, Get, Param, Patch, Delete, Put } from '@nestjs/common';
 import { ShiftAssignmentCreateDto } from './dtos/shift-assignment-create-dto';
 import { NotificationLogCreateDto } from './dtos/notification-log-create-dto';
 import { ScheduleRuleCreateDto } from './dtos/schedule-rule-create-dto';
 import { ScheduleRuleUpdateDto } from './dtos/schedule-rule-update-dto';
 import { Types } from 'mongoose';
+import { ShiftAssignmentStatus } from './models/enums';
+import { ShiftAssignmentUpdateDto } from './dtos/shift-assignment-update-dto';
 
 @Controller('time-management')
 export class TimeManagementController {
@@ -19,12 +21,27 @@ export class TimeManagementController {
     // Shift Assignment Functions
     @Post('assign-shift')
     async assignShift(@Body() assignData: ShiftAssignmentCreateDto) {
-        const result = await this.shiftAssignmentService.assignShift(assignData);
-        return {
-            success: true,
-            message: 'Shift assigned successfully!',
-            data: result
-        };
+        return await this.shiftAssignmentService.assignShift(assignData);
+    }
+    @Get('assign-shift')
+    async getAllShiftAssignments(){
+        return await this.shiftAssignmentService.getAllShiftAssignments() 
+    }
+    @Get('assign-shift/expiring')
+    async detectUpcomingExpiry(){
+        return await this.shiftAssignmentService.detectUpcomingExpiry()
+    }
+    @Get('assign-shift/:id')
+    async getShiftAssignmentById(@Param('id')shiftAssignmentId:string){
+        return await this.shiftAssignmentService.getShiftAssignmentById(shiftAssignmentId)
+    }
+    @Put('assign-shift/:id')
+    async updateShiftAssignment(@Param('id')shiftAssignmentId:string, @Body()status:ShiftAssignmentStatus){
+        return await this.shiftAssignmentService.updateShiftAssignment(status,shiftAssignmentId)
+    }
+    @Put('assign-shift/extend/:id')
+    async extendShiftAssignment(@Param('id')shiftAssignmentId:string,@Body()dto:ShiftAssignmentUpdateDto){
+        return await this.shiftAssignmentService.extendShiftAssignment(dto,shiftAssignmentId)
     }
 
     // Notification Log Functions
