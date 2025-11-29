@@ -1,25 +1,23 @@
 import { NotificationLogService } from './services/notification-log.service';
-import { Controller, Post, Body, Delete, Param, Get } from '@nestjs/common';
+import { Controller, Post, Body, Delete, Param, Get, Put, Patch } from '@nestjs/common';
 import { ShiftAssignmentService } from './services/shift-assignment.service';
 import { ScheduleRuleService } from './services/schedule-rule.service';
-import { BadRequestException, Controller, Post, Body, Get, Param, Patch, Delete, Put } from '@nestjs/common';
 import { ShiftAssignmentCreateDto } from './dtos/shift-assignment-create-dto';
 import { NotificationLogCreateDto } from './dtos/notification-log-create-dto';
 import { ScheduleRuleCreateDto } from './dtos/schedule-rule-create-dto';
 import { ScheduleRuleUpdateDto } from './dtos/schedule-rule-update-dto';
 import { Types } from 'mongoose';
-import { ShiftAssignmentStatus } from './models/enums';
 import { ShiftAssignmentUpdateDto } from './dtos/shift-assignment-update-dto';
 import { ShiftTypeCreateDto } from './dtos/shift-type-create-dto';
 import { ShiftTypeService } from './services/shift-type.service';
-import { Types } from 'mongoose';
+import { ShiftAssignmentStatus } from './models/enums';
 
 @Controller('time-management')
 export class TimeManagementController {
     constructor(
         private readonly shiftAssignmentService: ShiftAssignmentService,
         private readonly notificationLogService: NotificationLogService,
-        private readonly scheduleRuleService: ScheduleRuleService
+        private readonly scheduleRuleService: ScheduleRuleService,
         private shiftTypeService:ShiftTypeService
     ){}
 
@@ -106,9 +104,8 @@ export class TimeManagementController {
     async deleteScheduleRule(@Param('id') id: string) {
         const result = await this.scheduleRuleService.deleteScheduleRule(new Types.ObjectId(id));
         return result;
-    async assignShift(@Body() assignData: ShiftAssignmentCreateDto){
-        return this.shiftAssignmentService.assignShift(assignData);
     }
+
 
     //Shift Type Functions
     @Post('shift-type')
