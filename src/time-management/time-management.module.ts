@@ -1,3 +1,4 @@
+import { TimeExceptionController } from './time-management.controller';
 import { Module } from '@nestjs/common';
 import { TimeManagementController } from './time-management.controller';
 import { TimeManagementService } from './time-management.service';
@@ -23,6 +24,7 @@ import { Position, PositionSchema } from '../organization-structure/models/posit
 import { ScheduleRuleService } from './services/schedule-rule.service';
 import { LatenessRuleService } from './services/lateness-rule.service';
 import { OvertimeRuleService } from './services/overtime-rule.service';
+import { TimeExceptionService } from './services/time-exception.service';
 
 
 
@@ -44,12 +46,16 @@ import { OvertimeRuleService } from './services/overtime-rule.service';
     { name: EmployeeProfile.name, schema:EmployeeProfileSchema},
     { name: Department.name, schema: DepartmentSchema},
     { name: Position.name, schema: PositionSchema}
+ 
+
   ]),
   EmployeeProfileModule,
   OrganizationStructureModule
 
   ],
-  controllers: [TimeManagementController],
-  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, LatenessRuleService , OvertimeRuleService]
+  controllers: [TimeManagementController,TimeExceptionController],
+  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, LatenessRuleService , OvertimeRuleService,TimeExceptionService
+
+],
 })
 export class TimeManagementModule {}

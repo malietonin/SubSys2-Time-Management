@@ -1,3 +1,6 @@
+import { TimeExceptionService } from './services/time-exception.service';
+import { TimeExceptionCreateDto } from './dtos/create-time-exception.dto';
+import { TimeExceptionUpdateDto } from './dtos/update-time-exception.dto';
 import { LatenessRuleCreateDto } from './dtos/lateness-rule-create.dto';
 import { LatenessRuleUpdateDto } from './dtos/lateness-rule-update.dto';
 import { LatenessRuleService } from './services/lateness-rule.service';
@@ -13,6 +16,7 @@ import { OvertimeRuleCreateDto } from './dtos/overtime-rule-create.dto';
 import { OvertimeRuleUpdateDto } from './dtos/overtime-rule-update.dto';
 import { OvertimeRuleService } from './services/overtime-rule.service';
 import { ApplyOvertimeDto } from './dtos/apply-overtime.dto';
+ 
 
 
 import { Types } from 'mongoose';
@@ -25,6 +29,7 @@ export class TimeManagementController {
     private readonly scheduleRuleService: ScheduleRuleService,
     private readonly latenessRuleService: LatenessRuleService,
     private readonly overtimeRuleService: OvertimeRuleService, 
+    private readonly timeExceptionService: TimeExceptionService,
 ){}
 
     // Shift Assignment Functions
@@ -173,6 +178,48 @@ async deleteOvertimeRule(@Param('id') id: string) {
 async applyOvertime(@Body() dto: ApplyOvertimeDto) {
   return this.overtimeRuleService.applyOvertimeCalculation(dto);
 }
+}
+ 
+@Controller('time-exception')
+export class TimeExceptionController {
+  constructor(private readonly timeExceptionService: TimeExceptionService) {}
 
+  @Post()
+  create(@Body() dto: TimeExceptionCreateDto) {
+    return this.timeExceptionService.create(dto);
+  }
+
+  @Get()
+  list() {
+    return this.timeExceptionService.listAll();
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: TimeExceptionUpdateDto) {
+    return this.timeExceptionService.update(id, dto);
+  }
+  @Patch(':id/approve')
+approve(@Param('id') id: string, @Body('approvedBy') approvedBy: string) {
+  return this.timeExceptionService.approve(id, approvedBy);
+}
+
+
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.timeExceptionService.delete(id);
+  }
+  @Patch(':id/reject')
+reject(
+  @Param('id') id: string,
+  @Body('rejectedBy') rejectedBy: string,
+  @Body('reason') reason: string
+) {
+  return this.timeExceptionService.reject(id, rejectedBy, reason);
+}
 
 }
+
+
+
+
+
