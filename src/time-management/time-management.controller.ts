@@ -18,7 +18,7 @@ export class TimeManagementController {
         private readonly scheduleRuleService: ScheduleRuleService
     ){}
 
-    // Shift Assignment Functions
+    // Shift Assignment Functions (DONE -Authorization)
     @Post('assign-shift')
     async assignShift(@Body() assignData: ShiftAssignmentCreateDto) {
         return await this.shiftAssignmentService.assignShift(assignData);
