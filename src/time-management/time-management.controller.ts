@@ -11,6 +11,8 @@ import { ShiftAssignmentUpdateDto } from './dtos/shift-assignment-update-dto';
 import { ShiftTypeCreateDto } from './dtos/shift-type-create-dto';
 import { ShiftTypeService } from './services/shift-type.service';
 import { ShiftAssignmentStatus } from './models/enums';
+import { ShiftCreateDto } from './dtos/shift-create-dto';
+import { ShiftService } from './services/shift.service';
 
 @Controller('time-management')
 export class TimeManagementController {
@@ -18,7 +20,8 @@ export class TimeManagementController {
         private readonly shiftAssignmentService: ShiftAssignmentService,
         private readonly notificationLogService: NotificationLogService,
         private readonly scheduleRuleService: ScheduleRuleService,
-        private shiftTypeService:ShiftTypeService
+        private shiftTypeService:ShiftTypeService,
+        private shiftService: ShiftService
     ){}
 
     // Shift Assignment Functions (DONE -Authorization)
@@ -123,6 +126,24 @@ export class TimeManagementController {
     @Delete('shift-type/:id')
     async deleteShiftType(@Param('id')shiftTypeId:string){
         return this.shiftTypeService.deleteShiftType(shiftTypeId)
+    }
+
+    //Shift Functions
+    @Post('shift')
+    async createShift(@Body()shiftData:ShiftCreateDto){
+        return this.shiftService.createShift(shiftData)
+    }
+    @Get('shift')
+    async getAllShifts(){
+        return this.shiftService.getAllShifts()
+    }
+    @Get('shift/:id')
+    async getShiftById(@Param('id')shiftId:string){
+        return this.shiftService.getShiftById(shiftId)
+    }
+    @Put('shift/:id')
+    async deactivateShift(@Param('id')shiftId:string){
+        return this.shiftService.deactivateShift(shiftId)
     }
 
 }
