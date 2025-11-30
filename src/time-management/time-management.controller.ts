@@ -130,20 +130,28 @@ export class TimeManagementController {
 
     //Shift Functions
     @Post('shift')
-    async createShift(@Body()shiftData:ShiftCreateDto){
+    async createShift(@Body()shiftData:ShiftCreateDto){ //Working
         return this.shiftService.createShift(shiftData)
     }
     @Get('shift')
-    async getAllShifts(){
+    async getAllShifts(){ //Working
         return this.shiftService.getAllShifts()
     }
     @Get('shift/:id')
-    async getShiftById(@Param('id')shiftId:string){
+    async getShiftById(@Param('id')shiftId:string){ //Working
         return this.shiftService.getShiftById(shiftId)
     }
-    @Put('shift/:id')
-    async deactivateShift(@Param('id')shiftId:string){
+    @Put('shift/deactivate/:id')
+    async deactivateShift(@Param('id')shiftId:string){ //Working
         return this.shiftService.deactivateShift(shiftId)
+    }
+    @Put('shift/activate/:id')
+    async activateShift(@Param('id')shiftId:string){ //Working
+        return this.shiftService.activateShit(shiftId)
+    }
+    @Delete('shift/:id')
+    async deleteShift(@Param('id')shiftId:string){ //Working
+        return this.shiftService.deleteShift(shiftId)
     }
 
 }

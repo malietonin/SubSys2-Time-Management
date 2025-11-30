@@ -57,14 +57,31 @@ export class ShiftService{
             data: shift
         }
     }
-    async deactivateShift(shiftId:string){ //not working!!
-        const shift = await this.shiftModel.findByIdAndUpdate(shiftId, {active:false})
+    async deactivateShift(shiftId:string){
+        const shift = await this.shiftModel.findByIdAndUpdate(shiftId, {active:false}, {new:true})
         if(!shift) throw new NotFoundException('Shift not found!')
-        await shift.save()
         return{
             success:true,
             message: "Shift deactivated successfully",
             data: shift
+        }
+    }
+    async activateShit(shiftId:string){
+        const shift = await this.shiftModel.findByIdAndUpdate(shiftId, {active:true}, {new:true})
+        if(!shift) throw new NotFoundException("Shift not found!")
+        return{
+            success:true,
+            message: "Shift activated successfully!",
+            data:shift
+        }
+    }
+    async deleteShift(shiftId:string){
+        const shift = await this.shiftModel.findByIdAndDelete(shiftId)
+        if(!shift) throw new NotFoundException('Shift not found!')
+        return{
+            success:true,
+            message: "Shift deleted succesfully!",
+            data:shift
         }
     }
 }
