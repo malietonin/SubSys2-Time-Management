@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { AttendanceRecord, AttendanceRecordDocument } from '../models/attendance-record.schema';
+import { AttendanceRecord, AttendanceRecordDocument, Punch } from '../models/attendance-record.schema';
 import { CreateAttendancePunchDto } from '../dtos/create-attendance-record-dto';
 import { PunchType } from '../models/enums/index';
 import { EmployeeProfileService } from '../../employee-profile/employee-profile.service';
@@ -23,37 +23,22 @@ export class AttendanceRecordService {
     if (dto.punchType !== PunchType.IN) {
       throw new BadRequestException('Punch type must be IN.');
     }
-
-    const now = new Date();
-    let record = await this.attendanceModel.findOne({ employeeId: new Types.ObjectId(dto.employeeId) });
-
     const employee = await this.employeeProfileService.getMyProfile(dto.employeeId);
     if (!employee) {
       throw new NotFoundException('Employee not found.');
     }
-    const shiftAssignment = await this.shiftAssignmentModel.findOne({ employeeId: dto.employeeId});
-    if (!shiftAssignment) {
-      throw new NotFoundException('Shift assignment not found for employee.');
-    }
-
-    // Check if today is a rest day based on shift assignment
+    const record = await this.attendanceModel.findOne({employeeId: dto.employeeId})
+    if(!record) throw new NotFoundException("Record not found!")
     
-    // Example: if today is rest day, throw error
-
-    if (!record) {
-      record = await this.attendanceModel.create({
-        employeeId: new Types.ObjectId(dto.employeeId),
-        punches: [{ type: PunchType.IN, time: now }],
-      });
-    } else {
-      record.punches.push({ type: PunchType.IN, time: now });
-      await record.save();
+    const Punch:Punch = {time: new Date(Date.now()), type:dto.punchType}
+    record.punches.push(Punch)
+    return{
+      success:true,
+      message:"Clocked in successfully!",
+      data:record
     }
-
-    return { success: true, message: 'In recorded successfully', data: record };
   }
-
- 
+  
   async recordClockOut(dto: CreateAttendancePunchDto) {
     if (dto.punchType !== PunchType.OUT) {
       throw new BadRequestException('Punch type must be OUT.');
