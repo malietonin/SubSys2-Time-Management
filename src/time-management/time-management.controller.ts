@@ -1,4 +1,5 @@
 import { NotificationLogService } from './services/notification-log.service';
+import { Controller, Post, Body, Delete, Param, Get, Put, Patch } from '@nestjs/common';
 import { ShiftAssignmentService } from './services/shift-assignment.service';
 import { ScheduleRuleService } from './services/schedule-rule.service';
 import { AttendanceCorrectionRequestService } from './services/attendance-correction-request.service';
@@ -12,6 +13,12 @@ import { CreateHolidayDto } from './dtos/holiday-create-dto';
 import { HolidayService } from './services/holiday.service';
 
 import { Types } from 'mongoose';
+import { ShiftAssignmentUpdateDto } from './dtos/shift-assignment-update-dto';
+import { ShiftTypeCreateDto } from './dtos/shift-type-create-dto';
+import { ShiftTypeService } from './services/shift-type.service';
+import { ShiftAssignmentStatus } from './models/enums';
+import { ShiftCreateDto } from './dtos/shift-create-dto';
+import { ShiftService } from './services/shift.service';
 
 @Controller('time-management')
 export class TimeManagementController {
@@ -21,24 +28,48 @@ export class TimeManagementController {
         private readonly scheduleRuleService: ScheduleRuleService,
         private readonly attendanceCorrectionRequestService: AttendanceCorrectionRequestService,
         private readonly holidayService: HolidayService,
+        private shiftTypeService:ShiftTypeService,
+        private shiftService: ShiftService
     ){}
 
-    // Shift Assignment Functions
+    // Shift Assignment Functions (DONE -Authorization)
     @Post('assign-shift')
     async assignShift(@Body() assignData: ShiftAssignmentCreateDto) {
-        const result = await this.shiftAssignmentService.assignShift(assignData);
-        return {
-            success: true,
-            message: 'Shift assigned successfully!',
-            data: result
-        };
+        return await this.shiftAssignmentService.assignShift(assignData);
+    }
+    @Get('assign-shift')
+    async getAllShiftAssignments(){
+        return await this.shiftAssignmentService.getAllShiftAssignments() 
+    }
+    @Get('assign-shift/expiring')
+    async detectUpcomingExpiry(){
+        return await this.shiftAssignmentService.detectUpcomingExpiry()
+    }
+    @Get('assign-shift/:id')
+    async getShiftAssignmentById(@Param('id')shiftAssignmentId:string){
+        return await this.shiftAssignmentService.getShiftAssignmentById(shiftAssignmentId)
+    }
+    @Put('assign-shift/:id')
+    async updateShiftAssignment(@Param('id')shiftAssignmentId:string, @Body()status:ShiftAssignmentStatus){
+        return await this.shiftAssignmentService.updateShiftAssignment(status,shiftAssignmentId)
+    }
+    @Put('assign-shift/extend/:id')
+    async extendShiftAssignment(@Param('id')shiftAssignmentId:string,@Body()dto:ShiftAssignmentUpdateDto){
+        return await this.shiftAssignmentService.extendShiftAssignment(dto,shiftAssignmentId)
     }
 
-    // Notification Log Functions
-    @Post('notification')
-    async sendNotification(@Body() notifData: NotificationLogCreateDto) {
-        const result = await this.notificationLogService.sendNotification(notifData);
-        return result;
+    //Notification Log Functions
+    @Post('notification-log')
+    async sendNotification(@Body()notifData:NotificationLogCreateDto){
+        return this.notificationLogService.sendNotification(notifData);
+    }
+    @Get('notification-log')
+    async getAllNotifications(){
+        return this.notificationLogService.getAllNotifications()
+    }
+    @Get('notification-log/:id')
+    async getEmployeeNotifications(@Param('id') employeeId:string){
+        return this.notificationLogService.getEmployeeNotifications(employeeId)
     }
 
     // Schedule Rule Functions
@@ -197,3 +228,51 @@ export class TimeManagementController {
 
 
 }
+
+    //Shift Type Functions
+    @Post('shift-type')
+    async createShiftType(@Body()shiftTypeData:ShiftTypeCreateDto){
+        return this.shiftTypeService.createShiftType(shiftTypeData);
+    }
+    @Get('shift-type')
+    async getAllShiftTypes(){
+        return this.shiftTypeService.getAllShiftTypes();
+    }
+    @Get('shift-type/:id')
+    async getShiftTypeById(@Param('id')shiftTypeId:string){
+        return this.shiftTypeService.getShiftTypeById(shiftTypeId)
+    }
+    @Delete('shift-type/:id')
+    async deleteShiftType(@Param('id')shiftTypeId:string){
+        return this.shiftTypeService.deleteShiftType(shiftTypeId)
+    }
+
+    //Shift Functions
+    @Post('shift')
+    async createShift(@Body()shiftData:ShiftCreateDto){ //Working
+        return this.shiftService.createShift(shiftData)
+    }
+    @Get('shift')
+    async getAllShifts(){ //Working
+        return this.shiftService.getAllShifts()
+    }
+    @Get('shift/:id')
+    async getShiftById(@Param('id')shiftId:string){ //Working
+        return this.shiftService.getShiftById(shiftId)
+    }
+    @Put('shift/deactivate/:id')
+    async deactivateShift(@Param('id')shiftId:string){ //Working
+        return this.shiftService.deactivateShift(shiftId)
+    }
+    @Put('shift/activate/:id')
+    async activateShift(@Param('id')shiftId:string){ //Working
+        return this.shiftService.activateShit(shiftId)
+    }
+    @Delete('shift/:id')
+    async deleteShift(@Param('id')shiftId:string){ //Working
+        return this.shiftService.deleteShift(shiftId)
+    }
+
+}
+
+
