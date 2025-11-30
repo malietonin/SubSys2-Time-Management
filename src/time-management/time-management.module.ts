@@ -22,6 +22,7 @@ import { Department, DepartmentSchema } from '../organization-structure/models/d
 import { Position, PositionSchema } from '../organization-structure/models/position.schema';
 import { ScheduleRuleService } from './services/schedule-rule.service';
 import { ShiftTypeService } from './services/shift-type.service';
+import { ShiftService } from './services/shift.service';
 
 
 
@@ -47,6 +48,6 @@ import { ShiftTypeService } from './services/shift-type.service';
 
   ],
   controllers: [TimeManagementController],
-  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, ShiftTypeService]
+  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, ShiftTypeService, ShiftService]
 })
 export class TimeManagementModule {}
