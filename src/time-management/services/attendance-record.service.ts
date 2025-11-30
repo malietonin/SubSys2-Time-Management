@@ -4,12 +4,18 @@ import { Model, Types } from 'mongoose';
 import { AttendanceRecord, AttendanceRecordDocument } from '../models/attendance-record.schema';
 import { CreateAttendancePunchDto } from '../dtos/create-attendance-record-dto';
 import { PunchType } from '../models/enums/index';
+import { EmployeeProfileService } from '../../employee-profile/employee-profile.service';
+import { ShiftAssignmentService } from './shift-assignment.service';
+import { ShiftAssignment, ShiftAssignmentDocument } from '../models/shift-assignment.schema';
 
 @Injectable()
 export class AttendanceRecordService {
   constructor(
     @InjectModel(AttendanceRecord.name)
     private attendanceModel: Model<AttendanceRecordDocument>,
+    private employeeProfileService: EmployeeProfileService,
+    @InjectModel(ShiftAssignment.name)
+    private shiftAssignmentModel: Model <ShiftAssignmentDocument>
   ) {}
 
   
@@ -21,7 +27,17 @@ export class AttendanceRecordService {
     const now = new Date();
     let record = await this.attendanceModel.findOne({ employeeId: new Types.ObjectId(dto.employeeId) });
 
-    // Validate shift and rest day here (placeholder)
+    const employee = await this.employeeProfileService.getMyProfile(dto.employeeId);
+    if (!employee) {
+      throw new NotFoundException('Employee not found.');
+    }
+    const shiftAssignment = await this.shiftAssignmentModel.findOne({ employeeId: dto.employeeId});
+    if (!shiftAssignment) {
+      throw new NotFoundException('Shift assignment not found for employee.');
+    }
+
+    // Check if today is a rest day based on shift assignment
+    
     // Example: if today is rest day, throw error
 
     if (!record) {

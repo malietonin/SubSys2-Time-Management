@@ -58,6 +58,10 @@ export class ScheduleRuleService {
     if (!deleted) {
       throw new NotFoundException(`Schedule rule with ID ${id} not found`);
     }
-    return { success: true, message: "Schedule rule deleted successfully" };
+    return { 
+        success: true,
+        message: "Schedule rule deleted successfully", 
+        data: deleted 
+      };
   }
 }
