@@ -54,7 +54,7 @@ import { TimeExceptionService } from './services/time-exception.service';
 
   ],
   controllers: [TimeManagementController,TimeExceptionController],
-  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, LatenessRuleService , OvertimeRuleService,TimeExceptionService
+  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, LatenessRuleService , OvertimeRuleService,TimeExceptionService,
 
 ],
 })

@@ -1,189 +1,184 @@
 import { TimeExceptionService } from './services/time-exception.service';
-import { TimeExceptionCreateDto } from './dtos/create-time-exception.dto';
-import { TimeExceptionUpdateDto } from './dtos/update-time-exception.dto';
-import { LatenessRuleCreateDto } from './dtos/lateness-rule-create.dto';
-import { LatenessRuleUpdateDto } from './dtos/lateness-rule-update.dto';
-import { LatenessRuleService } from './services/lateness-rule.service';
-import { NotificationLogService } from './services/notification-log.service';
+import {Controller,Post,Body,Get,Param,Patch,Delete,BadRequestException,
+} from '@nestjs/common';
+import { Types } from 'mongoose';
 import { ShiftAssignmentService } from './services/shift-assignment.service';
+import { NotificationLogService } from './services/notification-log.service';
 import { ScheduleRuleService } from './services/schedule-rule.service';
-import { BadRequestException, Controller, Post, Body, Get, Param, Patch, Delete } from '@nestjs/common';
+import { LatenessRuleService } from './services/lateness-rule.service';
+import { OvertimeRuleService } from './services/overtime-rule.service';
+ 
 import { ShiftAssignmentCreateDto } from './dtos/shift-assignment-create-dto';
 import { NotificationLogCreateDto } from './dtos/notification-log-create-dto';
 import { ScheduleRuleCreateDto } from './dtos/schedule-rule-create-dto';
 import { ScheduleRuleUpdateDto } from './dtos/schedule-rule-update-dto';
+import { LatenessRuleCreateDto } from './dtos/lateness-rule-create.dto';
+import { LatenessRuleUpdateDto } from './dtos/lateness-rule-update.dto';
+import { ApplyOvertimeDto } from './dtos/apply-overtime.dto';
 import { OvertimeRuleCreateDto } from './dtos/overtime-rule-create.dto';
 import { OvertimeRuleUpdateDto } from './dtos/overtime-rule-update.dto';
-import { OvertimeRuleService } from './services/overtime-rule.service';
-import { ApplyOvertimeDto } from './dtos/apply-overtime.dto';
- 
+import { TimeExceptionCreateDto } from './dtos/create-time-exception.dto';
+import { TimeExceptionUpdateDto } from './dtos/update-time-exception.dto';
 
-
-import { Types } from 'mongoose';
-
+/* =====================================================================
+   TIME MANAGEMENT CONTROLLER (MAIN)
+===================================================================== */
 @Controller('time-management')
 export class TimeManagementController {
-    constructor(
+  constructor(
     private readonly shiftAssignmentService: ShiftAssignmentService,
     private readonly notificationLogService: NotificationLogService,
     private readonly scheduleRuleService: ScheduleRuleService,
     private readonly latenessRuleService: LatenessRuleService,
-    private readonly overtimeRuleService: OvertimeRuleService, 
-    private readonly timeExceptionService: TimeExceptionService,
-){}
+    private readonly overtimeRuleService: OvertimeRuleService,
+    private readonly timeExceptionService: TimeExceptionService
+  ) {}
 
-    // Shift Assignment Functions
-    @Post('assign-shift')
-    async assignShift(@Body() assignData: ShiftAssignmentCreateDto) {
-        const result = await this.shiftAssignmentService.assignShift(assignData);
-        return {
-            success: true,
-            message: 'Shift assigned successfully!',
-            data: result
-        };
-    }
-
-    // Notification Log Functions
-    @Post('notification')
-    async sendNotification(@Body() notifData: NotificationLogCreateDto) {
-        const result = await this.notificationLogService.sendNotification(notifData);
-        return result;
-    }
-
-    // Schedule Rule Functions
-    @Post('schedule-rule')
-    async createScheduleRule(@Body() dto: ScheduleRuleCreateDto) {
-        const createdRule = await this.scheduleRuleService.createScheduleRule(dto);
-        return {
-            success: true,
-            message: 'Schedule rule created successfully!',
-            data: createdRule
-        };
-    }
-
-    @Get('lateness-rule')
-async listLatenessRules() {
-  return {
-    success: true,
-    data: await this.latenessRuleService.listLatenessRules(),
-  };
-}
- @Get('lateness-rule/:id')
-async getLatenessRuleById(@Param('id') id: string) {
-  const found = await this.latenessRuleService.findById(id);
-
-  if (!found) {
-    throw new BadRequestException('Rule not found');
+  // SHIFT ASSIGNMENT
+  @Post('assign-shift')
+  async assignShift(@Body() dto: ShiftAssignmentCreateDto) {
+    return {
+      success: true,
+      message: 'Shift assigned successfully!',
+      data: await this.shiftAssignmentService.assignShift(dto),
+    };
   }
 
-  return { success: true, data: found };
-}
+  // NOTIFICATION
+  @Post('notification')
+  async sendNotification(@Body() dto: NotificationLogCreateDto) {
+    return this.notificationLogService.sendNotification(dto);
+  }
 
-    @Patch('schedule-rule/:id')
-    async updateScheduleRule(@Param('id') id: string, @Body() dto: ScheduleRuleUpdateDto) {
-        const updatedRule = await this.scheduleRuleService.updateScheduleRule(new Types.ObjectId(id), dto);
-        return {
-            success: true,
-            message: 'Schedule rule updated successfully!',
-            data: updatedRule
-        };
-    }
-
-    @Delete('schedule-rule/:id')
-    async deleteScheduleRule(@Param('id') id: string) {
-        const result = await this.scheduleRuleService.deleteScheduleRule(new Types.ObjectId(id));
-        return result;
-    }
- // Lateness Rule Functions
-@Post('lateness-rule')
-async createLatenessRule(@Body() dto: LatenessRuleCreateDto) {
-    const result = await this.latenessRuleService.createLatenessRule(dto);
+  // SCHEDULE RULES
+  @Post('schedule-rule')
+  async createScheduleRule(@Body() dto: ScheduleRuleCreateDto) {
     return {
-        success: true,
-        message: 'Lateness rule created successfully!',
-        data: result
+      success: true,
+      message: 'Schedule rule created successfully!',
+      data: await this.scheduleRuleService.createScheduleRule(dto),
     };
-}
+  }
 
- 
-@Patch('lateness-rule/:id')
-async updateLatenessRule(@Param('id') id: string, @Body() dto: LatenessRuleUpdateDto) {
-    const result = await this.latenessRuleService.updateLatenessRule(id, dto);
+  @Patch('schedule-rule/:id')
+  async updateScheduleRule(
+    @Param('id') id: string,
+    @Body() dto: ScheduleRuleUpdateDto,
+  ) {
     return {
-        success: true,
-        message: 'Lateness rule updated successfully!',
-        data: result
+      success: true,
+      message: 'Schedule rule updated successfully!',
+      data: await this.scheduleRuleService.updateScheduleRule(
+        new Types.ObjectId(id),
+        dto,
+      ),
     };
-}
+  }
 
-@Delete('lateness-rule/:id')
-async deleteLatenessRule(@Param('id') id: string) {
-    const result = await this.latenessRuleService.deleteLatenessRule(id);
+  @Delete('schedule-rule/:id')
+  async deleteScheduleRule(@Param('id') id: string) {
+    return this.scheduleRuleService.deleteScheduleRule(
+      new Types.ObjectId(id),
+    );
+  }
+
+  // LATENESS RULES
+  @Post('lateness-rule')
+  async createLatenessRule(@Body() dto: LatenessRuleCreateDto) {
+    return this.latenessRuleService.createLatenessRule(dto);
+  }
+
+  @Get('lateness-rule')
+  async listLatenessRules() {
     return {
-        success: true,
-        message: 'Lateness rule deleted successfully!',
-        data: result
+      success: true,
+      data: await this.latenessRuleService.listLatenessRules(),
     };
-}
-@Post('lateness-rule/:id/apply')
-async applyPenalty(
-  @Param('id') id: string,
-  @Body('actualMinutesLate') actualMinutesLate: number
-) {
-  return this.latenessRuleService.applyLatenessPenalty(actualMinutesLate, id);
-}
+  }
 
-@Get('lateness-rule/repeated/:employeeId')
-async detectRepeated(
-  @Param('employeeId') employeeId: string
-) {
-  return this.latenessRuleService.detectRepeatedLateness(employeeId);
-}
- 
+  @Get('lateness-rule/:id')
+  async getLatenessRule(@Param('id') id: string) {
+    const rule = await this.latenessRuleService.findById(id);
+    if (!rule) throw new BadRequestException('Rule not found');
+    return { success: true, data: rule };
+  }
 
-@Post('overtime-rule')
-async createOvertimeRule(@Body() dto: OvertimeRuleCreateDto) {
+  @Patch('lateness-rule/:id')
+  async updateLatenessRule(
+    @Param('id') id: string,
+    @Body() dto: LatenessRuleUpdateDto,
+  ) {
+    return this.latenessRuleService.updateLatenessRule(id, dto);
+  }
+
+  @Delete('lateness-rule/:id')
+  async deleteLatenessRule(@Param('id') id: string) {
+    return this.latenessRuleService.deleteLatenessRule(id);
+  }
+
+  @Post('lateness-rule/:id/apply')
+  async applyPenalty(
+    @Param('id') id: string,
+    @Body('actualMinutesLate') minutes: number,
+  ) {
+    return this.latenessRuleService.applyLatenessPenalty(minutes, id);
+  }
+
+  @Get('lateness-rule/repeated/:employeeId')
+  async detectRepeated(@Param('employeeId') employeeId: string) {
+    return this.latenessRuleService.detectRepeatedLateness(employeeId);
+  }
+
+  // OVERTIME RULES
+  @Post('overtime-rule')
+  async createOvertimeRule(@Body() dto: OvertimeRuleCreateDto) {
     return this.overtimeRuleService.createOvertimeRule(dto);
-}
+  }
 
-@Get('overtime-rule')
-async listOvertimeRules() {
+  @Get('overtime-rule')
+  async listOvertimeRules() {
     return {
-        success: true,
-        data: await this.overtimeRuleService.listOvertimeRules(),
+      success: true,
+      data: await this.overtimeRuleService.listOvertimeRules(),
     };
-}
+  }
 
-@Get('overtime-rule/:id')
-async getOvertimeRuleById(@Param('id') id: string) {
+  @Get('overtime-rule/:id')
+  async getOvertimeRule(@Param('id') id: string) {
     const rule = await this.overtimeRuleService.findById(id);
     if (!rule) throw new BadRequestException('Rule not found');
     return { success: true, data: rule };
-}
+  }
 
-@Patch('overtime-rule/:id')
-async updateOvertimeRule(
+  @Patch('overtime-rule/:id')
+  async updateOvertimeRule(
     @Param('id') id: string,
-    @Body() dto: OvertimeRuleUpdateDto
-) {
+    @Body() dto: OvertimeRuleUpdateDto,
+  ) {
     return this.overtimeRuleService.updateOvertimeRule(id, dto);
+  }
+
+  @Delete('overtime-rule/:id')
+  async deleteOvertimeRule(@Param('id') id: string) {
+    return this.overtimeRuleService.deleteOvertimeRule(id);
+  }
+
+  @Post('overtime-rule/apply')
+  async applyOvertime(@Body() dto: ApplyOvertimeDto) {
+    return this.overtimeRuleService.applyOvertimeCalculation(dto);
+  }
 }
 
-@Delete('overtime-rule/:id')
-async deleteOvertimeRule(@Param('id') id: string) {
-    return this.overtimeRuleService.deleteOvertimeRule(id);
-}
- 
-@Post('overtime-rule/apply')
-async applyOvertime(@Body() dto: ApplyOvertimeDto) {
-  return this.overtimeRuleService.applyOvertimeCalculation(dto);
-}
-}
- 
+/* =====================================================================
+   TIME EXCEPTION CONTROLLER (SEPARATE ROUTE)
+===================================================================== */
 @Controller('time-exception')
 export class TimeExceptionController {
-  constructor(private readonly timeExceptionService: TimeExceptionService) {}
+  constructor(
+    private readonly timeExceptionService: TimeExceptionService
+  ) {}
 
+ 
   @Post()
   create(@Body() dto: TimeExceptionCreateDto) {
     return this.timeExceptionService.create(dto);
@@ -198,28 +193,36 @@ export class TimeExceptionController {
   update(@Param('id') id: string, @Body() dto: TimeExceptionUpdateDto) {
     return this.timeExceptionService.update(id, dto);
   }
-  @Patch(':id/approve')
-approve(@Param('id') id: string, @Body('approvedBy') approvedBy: string) {
-  return this.timeExceptionService.approve(id, approvedBy);
-}
 
+  @Patch(':id/approve')
+  approve(
+    @Param('id') id: string,
+    @Body('approvedBy') approvedBy: string,
+  ) {
+    return this.timeExceptionService.approve(id, approvedBy);
+  }
+
+  @Patch(':id/reject')
+  reject(
+    @Param('id') id: string,
+    @Body('rejectedBy') rejectedBy: string,
+    @Body('reason') reason: string,
+  ) {
+    return this.timeExceptionService.reject(id, rejectedBy, reason);
+  }
 
   @Delete(':id')
   delete(@Param('id') id: string) {
     return this.timeExceptionService.delete(id);
   }
-  @Patch(':id/reject')
-reject(
-  @Param('id') id: string,
-  @Body('rejectedBy') rejectedBy: string,
-  @Body('reason') reason: string
-) {
-  return this.timeExceptionService.reject(id, rejectedBy, reason);
+   @Patch(':id/force-pending')
+forcePending(@Param('id') id: string) {
+  return this.timeExceptionService.forcePending(id);
+}
+ 
+@Patch(':id/escalate')
+escalate(@Param('id') id: string) {
+  return this.timeExceptionService.escalate(id);
 }
 
 }
-
-
-
-
-
