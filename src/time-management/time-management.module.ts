@@ -52,5 +52,6 @@ import { HolidayService } from './services/holiday.service';
   ],
   controllers: [TimeManagementController],
   providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, AttendanceRecordService, AttendanceCorrectionRequestService, HolidayService],
+  exports: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, AttendanceRecordService, AttendanceCorrectionRequestService, HolidayService]
 })
 export class TimeManagementModule {}
