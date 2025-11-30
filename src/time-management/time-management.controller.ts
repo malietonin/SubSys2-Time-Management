@@ -1,9 +1,8 @@
 import { NotificationLogService } from './services/notification-log.service';
-import { Controller, Post, Body, Delete, Param, Get, Put, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Delete, Param, Get, Put, Patch, BadRequestException } from '@nestjs/common';
 import { ShiftAssignmentService } from './services/shift-assignment.service';
 import { ScheduleRuleService } from './services/schedule-rule.service';
 import { AttendanceCorrectionRequestService } from './services/attendance-correction-request.service';
-import { BadRequestException, Controller, Post, Body, Get, Param, Patch, Delete } from '@nestjs/common';
 import { ShiftAssignmentCreateDto } from './dtos/shift-assignment-create-dto';
 import { NotificationLogCreateDto } from './dtos/notification-log-create-dto';
 import { ScheduleRuleCreateDto } from './dtos/schedule-rule-create-dto';
@@ -215,19 +214,15 @@ export class TimeManagementController {
 
     @Post('attendance-correction-request/auto-escalate')
     async autoEscalate() {
-    const result = await this.attendanceCorrectionRequestService
-        .autoEscalatePendingCorrections();
+        const result = await this.attendanceCorrectionRequestService
+            .autoEscalatePendingCorrections();
 
-    return {
-        success: true,
-        message: 'Pending correction requests auto-escalated.',
-        data: result
-    };
-}
-
-
-
-}
+        return {
+            success: true,
+            message: 'Pending correction requests auto-escalated.',
+            data: result
+        };
+    }
 
     //Shift Type Functions
     @Post('shift-type')
