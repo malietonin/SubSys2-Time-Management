@@ -27,6 +27,11 @@ import { OvertimeRuleService } from './services/overtime-rule.service';
 import { TimeExceptionService } from './services/time-exception.service';
 
 
+import { AttendanceRecordService } from './services/attendance-record.service';
+import { AttendanceCorrectionRequestService } from './services/attendance-correction-request.service';  
+import { HolidayService } from './services/holiday.service';
+import { ShiftTypeService } from './services/shift-type.service';
+import { ShiftService } from './services/shift.service';
 
 
 
@@ -53,9 +58,7 @@ import { TimeExceptionService } from './services/time-exception.service';
   OrganizationStructureModule
 
   ],
-  controllers: [TimeManagementController,TimeExceptionController],
-  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, LatenessRuleService , OvertimeRuleService,TimeExceptionService,
-
-],
+  controllers: [TimeManagementController],
+  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, ShiftTypeService, ShiftService, AttendanceCorrectionRequestService, HolidayService, LatenessRuleService, OvertimeRuleService, TimeExceptionService]
 })
 export class TimeManagementModule {}
