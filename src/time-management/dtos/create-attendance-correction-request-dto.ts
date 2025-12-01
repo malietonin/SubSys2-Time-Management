@@ -1,14 +1,16 @@
 import { IsNotEmpty, IsOptional, IsEnum, IsString } from "class-validator";
 import { CorrectionRequestStatus } from "../models/enums/index";
+import { Types } from "mongoose";
+
 
 export class AttendanceCorrectionRequestDto {
   @IsNotEmpty()
   @IsString()
-  employeeId: string; 
+  employeeId: Types.ObjectId; 
 
   @IsNotEmpty()
   @IsString()
-  attendanceRecordId: string; 
+  attendanceRecordId: Types.ObjectId; 
 
   @IsOptional()
   @IsString()
@@ -23,12 +25,12 @@ export class UpdateAttendanceCorrectionRequestDto {
   @IsNotEmpty()
   @IsString()
   @IsOptional()
-  employeeId?: string; 
+  employeeId?: Types.ObjectId; 
 
   @IsNotEmpty()
   @IsString()
   @IsOptional()
-  attendanceRecordId?: string; 
+  attendanceRecordId?: Types.ObjectId; 
 
   @IsOptional()
   @IsString()

@@ -6,7 +6,7 @@ import { CreateAttendancePunchDto } from '../dtos/create-attendance-record-dto';
 import { PunchType } from '../models/enums/index';
 import { EmployeeProfileService } from '../../employee-profile/employee-profile.service';
 import { ScheduleRule, ScheduleRuleDocument } from '../models/schedule-rule.schema';
-
+import { ShiftAssignment, ShiftAssignmentDocument } from '../models/shift-assignment.schema';
 @Injectable()
 export class AttendanceRecordService {
   constructor(
@@ -15,6 +15,8 @@ export class AttendanceRecordService {
     private employeeProfileService: EmployeeProfileService,
     @InjectModel(ScheduleRule.name)
     private scheduleRuleModel: Model<ScheduleRuleDocument>,
+    @InjectModel(ShiftAssignment.name)
+    private shiftAssignmentModel: Model<ShiftAssignmentDocument>,
 
   ) {}
 
@@ -71,19 +73,13 @@ export class AttendanceRecordService {
     }
   
     const employee = await this.employeeProfileService.getMyProfile(dto.employeeId);
-    if (!employee) {
-      throw new NotFoundException('Employee not found.');
-    }
+    if (!employee) throw new NotFoundException('Employee not found.');
   
     const record = await this.attendanceModel.findOne({ employeeId: new Types.ObjectId(dto.employeeId) });
-    if (!record) {
-      throw new NotFoundException('No attendance record found.');
-    }
+    if (!record) throw new NotFoundException('No attendance record found.');
   
     const scheduleRule = await this.scheduleRuleModel.findOne({ employeeId: dto.employeeId });
-    if (!scheduleRule) {
-      throw new NotFoundException('Schedule rule not found.');
-    }
+    if (!scheduleRule) throw new NotFoundException('Schedule rule not found.');
   
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -91,21 +87,29 @@ export class AttendanceRecordService {
       p.type === PunchType.IN &&
       new Date(p.time).setHours(0, 0, 0, 0) === today.getTime()
     );
-  
-    if (!hasClockedInToday) {
-      throw new BadRequestException('Cannot clock out without clocking in first.');
-    }
+    if (!hasClockedInToday) throw new BadRequestException('Cannot clock out without clocking in first.');
   
     const now = new Date();
     const punch: Punch = { time: now, type: dto.punchType };
     record.punches.push(punch);
   
-    // compute totalWorkMinutes based on first IN punch of the day
-    const firstIn = record.punches.find(p => p.type === PunchType.IN && new Date(p.time).setHours(0,0,0,0) === today.getTime())?.time;
-    if (firstIn) {
-      record.totalWorkMinutes = Math.floor((now.getTime() - firstIn.getTime()) / 60000);
+    // Compute totalWorkMinutes by summing all IN->OUT intervals for today
+    const todayPunches = record.punches.filter(p =>
+      new Date(p.time).setHours(0,0,0,0) === today.getTime()
+    );
+  
+    let totalMinutes = 0;
+    for (let i = 0; i < todayPunches.length; i++) {
+      if (todayPunches[i].type === PunchType.IN) {
+        const outPunch = todayPunches.slice(i+1).find(p => p.type === PunchType.OUT);
+        if (outPunch) {
+          totalMinutes += Math.floor((new Date(outPunch.time).getTime() - new Date(todayPunches[i].time).getTime()) / 60000);
+          i = todayPunches.indexOf(outPunch); // skip to next punch after OUT
+        }
+      }
     }
   
+    record.totalWorkMinutes = totalMinutes;
     await record.save();
   
     return {
@@ -115,8 +119,10 @@ export class AttendanceRecordService {
     };
   }
   
+  
+  
 
-  // 4. detectMissedPunches
+  // detectMissedPunches
   async detectMissedPunches(employeeId: string) {
     const record = await this.attendanceModel.findOne({ employeeId: new Types.ObjectId(employeeId) });
     if (!record) throw new NotFoundException('No attendance record found.');
@@ -134,44 +140,162 @@ export class AttendanceRecordService {
     return { success: true, message: 'Missed punches detected', data: record };
   }
 
-  // 5. applyRoundingRules
-  async applyRoundingRules(employeeId: string) {
-    const record = await this.attendanceModel.findOne({ employeeId: new Types.ObjectId(employeeId) });
-    if (!record) throw new NotFoundException('No attendance record found.');
+  // listAttendanceForEmployee
 
-    // Apply rounding policy here (placeholder)
-    // Example: round punch times to nearest 15 minutes
+  async listAttendanceForEmployee(
+    employeeId: string,
+    startDate?: string,
+    endDate?: string
+  ) {
 
-    return { success: true, message: 'Rounding rules applied', data: record };
+    const employee = await this.employeeProfileService.getMyProfile(employeeId);
+    if (!employee) throw new NotFoundException('Employee not found.');
+  
+   
+    const record = await this.attendanceModel.findOne({
+      employeeId: new Types.ObjectId(employeeId)
+    });
+  
+    if (!record) {
+      return {
+        success: true,
+        message: 'No attendance punches found.',
+        data: []
+      };
+    }
+  
+    
+    if (!startDate && !endDate) {
+      return {
+        success: true,
+        message: 'All attendance punches fetched.',
+        data: record.punches
+      };
+    }
+  
+    
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
+  
+    if (start) start.setHours(0, 0, 0, 0);
+    if (end) end.setHours(23, 59, 59, 999);
+  
+  
+    const filtered = record.punches.filter(p => {
+      const t = new Date(p.time).getTime();
+  
+      if (start && end)
+        return t >= start.getTime() && t <= end.getTime();
+  
+      if (start)
+        return t >= start.getTime();
+  
+      if (end)
+        return t <= end.getTime();
+  
+      return true;
+    });
+  
+    return {
+      success: true,
+      message: 'Attendance punches fetched for the specified period.',
+      data: filtered
+    };
   }
+  
 
-  // 6. calculateLateness
-  async calculateLateness(employeeId: string) {
-    const record = await this.attendanceModel.findOne({ employeeId: new Types.ObjectId(employeeId) });
-    if (!record) throw new NotFoundException('No attendance record found.');
+  // rest of crud
 
-    // Compare punches to scheduled shift and lateness rules (placeholder)
+  // update: update by timestamp 3shan theres no punch id
 
-    return { success: true, message: 'Lateness calculated', data: record };
+  async updatePunchByTime(
+    employeeId: string,
+    punchTime: string,
+    update: { time?: string; type?: 'IN' | 'OUT' }
+  ) {
+    const record = await this.attendanceModel.findOne({
+      employeeId: new Types.ObjectId(employeeId)
+    });
+  
+    if (!record) throw new NotFoundException('Attendance record not found.');
+  
+    const target = record.punches.find(
+      p => new Date(p.time).getTime() === new Date(punchTime).getTime()
+    );
+  
+    if (!target) throw new NotFoundException('Punch not found.');
+  
+    if (update.time) target.time = new Date(update.time);
+    if (update.type) target.type = update.type as PunchType;
+  
+    await record.save();
+  
+    return {
+      success: true,
+      message: 'Punch updated.',
+      data: record
+    };
   }
+  
 
-  // 7. calculateOvertimeOrShortTime
-  async calculateOvertimeOrShortTime(employeeId: string) {
-    const record = await this.attendanceModel.findOne({ employeeId: new Types.ObjectId(employeeId) });
-    if (!record) throw new NotFoundException('No attendance record found.');
+  // nafs el kalam f delete
 
-    // Compare actual vs. scheduled hours (placeholder)
+  async deletePunchByTime(employeeId: string, punchTime: string) {
+  const record = await this.attendanceModel.findOne({
+    employeeId: new Types.ObjectId(employeeId)
+  });
 
-    return { success: true, message: 'Overtime/Short time calculated', data: record };
-  }
+  if (!record) throw new NotFoundException('Attendance record not found.');
 
-  // 8. syncAttendanceWithPayroll
-  async syncAttendanceWithPayroll(employeeId: string) {
-    const record = await this.attendanceModel.findOne({ employeeId: new Types.ObjectId(employeeId) });
-    if (!record) throw new NotFoundException('No attendance record found.');
+  const before = record.punches.length;
 
-    // Package and send attendance to payroll system (placeholder)
+  record.punches = record.punches.filter(
+    p => new Date(p.time).getTime() !== new Date(punchTime).getTime()
+  );
 
-    return { success: true, message: 'Attendance synced with payroll', data: record };
-  }
+  const after = record.punches.length;
+
+  if (before === after)
+    throw new NotFoundException('Punch not found.');
+
+  await record.save();
+
+  return {
+    success: true,
+    message: 'Punch deleted.',
+    data: record
+  };
+
+  
+}
+
+
+// delete all punches for date
+
+
+async deletePunchesForDate(employeeId: string, date: string) {
+  const record = await this.attendanceModel.findOne({
+    employeeId: new Types.ObjectId(employeeId)
+  });
+
+  if (!record) throw new NotFoundException('Attendance record not found.');
+
+  const day = new Date(date).setHours(0,0,0,0);
+
+  record.punches = record.punches.filter(p => {
+    const t = new Date(p.time).setHours(0,0,0,0);
+    return t !== day;
+  });
+
+  await record.save();
+
+  return {
+    success: true,
+    message: 'Punches for date deleted.',
+    data: record
+  };
+}
+
+  
+
 }
