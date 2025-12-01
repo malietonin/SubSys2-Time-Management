@@ -58,6 +58,19 @@ import { ShiftService } from './services/shift.service';
 
   ],
   controllers: [TimeManagementController],
-  providers: [TimeManagementService, NotificationLogService,ShiftAssignmentService, ScheduleRuleService, ShiftTypeService, ShiftService, AttendanceCorrectionRequestService, HolidayService, LatenessRuleService, OvertimeRuleService, TimeExceptionService]
+  providers: [
+    TimeManagementService,
+    NotificationLogService,
+    ShiftAssignmentService,
+    ScheduleRuleService,
+    ShiftTypeService,
+    ShiftService,
+    AttendanceCorrectionRequestService,
+    HolidayService,
+    LatenessRuleService,
+    OvertimeRuleService,
+    TimeExceptionService,
+    AttendanceRecordService
+  ]
 })
 export class TimeManagementModule {}
