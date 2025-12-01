@@ -29,6 +29,8 @@ import { LatenessRuleCreateDto } from './dtos/lateness-rule-create.dto';
 import { LatenessRuleUpdateDto } from './dtos/lateness-rule-update.dto';
 import { AttendanceRecordService } from './services/attendance-record.service';
 import { CreateAttendancePunchDto } from './dtos/create-attendance-record-dto';
+import { CreateAttendanceRecordDto } from './dtos/attendance-record-dto';
+import { UpdateAttendanceRecordDto } from './dtos/update-attendance-record-dto';
 
 @Controller('time-management')
 export class TimeManagementController {
@@ -155,7 +157,7 @@ export class TimeManagementController {
         return this.attendanceRecordService.detectMissedPunches(employeeId);
     }
 
-    @Get('attendance-record/:employeeId')
+    @Get('attendance-record/:employeeId') // employee, line manager, payroll officer, sys admin
     async listAttendanceForEmployee(
         @Param('employeeId') employeeId: string,
         @Query('startDate') startDate?: string,
@@ -173,7 +175,7 @@ export class TimeManagementController {
         return this.attendanceRecordService.updatePunchByTime(employeeId, punchTime, update);
     }
 
-    @Delete('attendance-record/:employeeId/punch')
+    @Delete('attendance-record/:employeeId/punch') // employee, sys admin
     async deletePunchByTime(
         @Param('employeeId') employeeId: string,
         @Body('punchTime') punchTime: string
@@ -181,12 +183,27 @@ export class TimeManagementController {
         return this.attendanceRecordService.deletePunchByTime(employeeId, punchTime);
     }
 
-    @Delete('attendance-record/:employeeId/punches')
+    @Delete('attendance-record/:employeeId/punches') // line manager, sys admin
     async deletePunchesForDate(
         @Param('employeeId') employeeId: string,
         @Query('date') date: string
     ) {
         return this.attendanceRecordService.deletePunchesForDate(employeeId, date);
+    }
+
+    @Post('attendance-record') // line manager
+    async createAttendanceRecord(@Body() dto: CreateAttendanceRecordDto) {
+        return this.attendanceRecordService.createAttendanceRecord(dto);
+    }
+
+    @Patch('attendance-record/:id') // line manager
+    async updateAttendanceRecord(@Param('id') id: string, @Body() dto: UpdateAttendanceRecordDto) {
+        return this.attendanceRecordService.updateAttendanceRecord(id, dto);
+    }
+
+    @Get('attendance-record/:employeeId/repeated-lateness') // hr manager
+    async flagRepeatedLateness(@Param('employeeId') employeeId: string) {
+        return this.attendanceRecordService.flagRepeatedLateness(employeeId);
     }
 
     // Attendance Correction Request Functions
@@ -311,21 +328,21 @@ export class TimeManagementController {
 
     @Put('shift/deactivate/:id') 
     async deactivateShift(@Param('id')shiftId:string){
-        return this.shiftService.deactivateShift(shiftId)
+        return this.shiftService.deactivateShift(shiftId) // sys admin, hr admin
     }
 
     @Put('shift/activate/:id') 
     async activateShift(@Param('id')shiftId:string){
-        return this.shiftService.activateShit(shiftId)
+        return this.shiftService.activateShit(shiftId) // sys admin, hr admin
     }
 
     @Delete('shift/:id') 
     async deleteShift(@Param('id')shiftId:string){
-        return this.shiftService.deleteShift(shiftId)
+        return this.shiftService.deleteShift(shiftId) // sys admin, hr admin
     }
 
     // Time Exception Functions
-    @Patch('time-exception/:id/approve') // line manager, hr admin
+   @Patch('time-exception/:id/approve') // line manager, hr admin
     async approveTimeException(@Param('id') id: string, @Body('approvedBy') approvedBy: string) {
         return this.timeExceptionService.approve(id, approvedBy);
     }
