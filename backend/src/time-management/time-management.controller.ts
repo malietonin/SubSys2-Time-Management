@@ -438,6 +438,13 @@ export class TimeManagementController {
     // Time Exception Functions
    @UseGuards(AuthGuard)
    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_ADMIN)
+   @Post('time-exception') // line manager, hr admin
+   async createTimeException(@Body() dto: TimeExceptionCreateDto) {
+       return this.timeExceptionService.create(dto);
+   }
+
+   @UseGuards(AuthGuard)
+   @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_ADMIN)
    @Patch('time-exception/:id/approve') // line manager, hr admin
     async approveTimeException(@Param('id') id: string, @Body('approvedBy') approvedBy: string) {
         return this.timeExceptionService.approve(id, approvedBy);
