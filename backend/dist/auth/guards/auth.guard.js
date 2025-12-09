@@ -27,17 +27,28 @@ let AuthGuard = class AuthGuard {
             const payload = await this.jwtService.verifyAsync(token, {
                 secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
             });
-            const allowedStatuses = ['ACTIVE', 'PROBATION'];
-            if (payload.status && !allowedStatuses.includes(payload.status)) {
-                throw new common_1.UnauthorizedException(`Access denied. Employee status: ${payload.status}. Only ACTIVE or PROBATION employees can access the system.`);
+            if (payload.userType === 'candidate') {
+                request.user = {
+                    userId: payload.userid,
+                    userType: 'candidate',
+                    candidateNumber: payload.candidateNumber,
+                    email: payload.email,
+                    status: payload.status,
+                };
             }
-            request.user = {
-                employeeId: payload.userid,
-                employeeNumber: payload.employeeNumber,
-                email: payload.email,
-                roles: payload.roles || ['department employee'],
-                status: payload.status,
-            };
+            else {
+                const allowedStatuses = ['ACTIVE', 'PROBATION'];
+                if (payload.status && !allowedStatuses.includes(payload.status)) {
+                    throw new common_1.UnauthorizedException(`Access denied. Employee status: ${payload.status}. Only ACTIVE or PROBATION employees can access the system.`);
+                }
+                request.user = {
+                    employeeId: payload.userid,
+                    employeeNumber: payload.employeeNumber,
+                    email: payload.email,
+                    roles: payload.roles || ['department employee'],
+                    status: payload.status,
+                };
+            }
             return true;
         }
         catch (error) {

@@ -25,6 +25,10 @@ let TimeExceptionService = class TimeExceptionService {
     constructor(timeExceptionModel) {
         this.timeExceptionModel = timeExceptionModel;
     }
+    async create(dto) {
+        const created = new this.timeExceptionModel(dto);
+        return await created.save();
+    }
     async listAll() {
         return this.timeExceptionModel.find();
     }
@@ -111,10 +115,6 @@ let TimeExceptionService = class TimeExceptionService {
             console.error("AUTO ESCALATE ERROR:", error);
             throw new common_1.InternalServerErrorException("Failed to auto-escalate");
         }
-    }
-    async create(dto) {
-        const created = new this.timeExceptionModel(dto);
-        return await created.save();
     }
     async forcePending(id) {
         return this.timeExceptionModel.findByIdAndUpdate(id, { status: 'PENDING' }, { new: true });

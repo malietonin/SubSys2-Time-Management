@@ -16,6 +16,7 @@ exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
 const login_dto_1 = require("./dto/login.dto");
+const candidate_login_dto_1 = require("./dto/candidate-login.dto");
 const register_dto_1 = require("./dto/register.dto");
 const auth_guard_1 = require("./guards/auth.guard");
 const roles_guard_1 = require("./guards/roles.guard");
@@ -40,6 +41,20 @@ let AuthController = class AuthController {
             user: result.payload,
         };
     }
+    async candidateLogin(candidateLoginDto, res) {
+        const result = await this.authService.candidateLogin(candidateLoginDto.email, candidateLoginDto.password);
+        res.cookie('token', result.access_token, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000,
+        });
+        return {
+            statusCode: common_1.HttpStatus.OK,
+            message: 'Candidate login successful',
+            user: result.payload,
+        };
+    }
     async register(registerDto) {
         return this.authService.register(registerDto);
     }
@@ -48,8 +63,17 @@ let AuthController = class AuthController {
     }
     async getMe(req) {
         const user = req['user'];
+        if (user?.userType === 'candidate') {
+            return {
+                userid: user?.userId,
+                userType: 'candidate',
+                candidateNumber: user?.candidateNumber,
+                email: user?.email,
+                status: user?.status,
+            };
+        }
         return {
-            userid: user?.userid,
+            userid: user?.employeeId,
             employeeNumber: user?.employeeNumber,
             email: user?.email,
             roles: user?.roles,
@@ -80,9 +104,18 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
 __decorate([
+    (0, common_1.Post)('candidate-login'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)({ passthrough: true })),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [candidate_login_dto_1.CandidateLoginDto, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "candidateLogin", null);
+__decorate([
     (0, common_1.Post)('register'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(employee_profile_enums_1.SystemRole.SYSTEM_ADMIN),
+    (0, roles_decorator_1.Roles)(employee_profile_enums_1.SystemRole.SYSTEM_ADMIN, employee_profile_enums_1.SystemRole.HR_ADMIN),
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
