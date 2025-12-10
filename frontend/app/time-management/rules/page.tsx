@@ -10,3 +10,4 @@
     // set penalties for lateness
 // set limits for permission duration
    // ensure only approved permissions affect payroll
+   // (overtime and short time thresholds)
