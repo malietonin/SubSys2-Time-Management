@@ -19,6 +19,7 @@ import { ShiftService } from './services/shift.service';
 import { TimeExceptionService } from './services/time-exception.service';
 import { OvertimeRuleService } from './services/overtime-rule.service';
 import { LatenessRuleService } from './services/lateness-rule.service';
+import { TimeExceptionCreateDto } from './dtos/create-time-exception.dto';
 import { OvertimeRuleCreateDto } from './dtos/overtime-rule-create.dto';
 import { OvertimeRuleUpdateDto } from './dtos/overtime-rule-update.dto';
 import { LatenessRuleCreateDto } from './dtos/lateness-rule-create.dto';
@@ -685,6 +686,11 @@ export declare class TimeManagementController {
         } & Required<{
             _id: Types.ObjectId;
         }>;
+    }>;
+    createTimeException(dto: TimeExceptionCreateDto): Promise<import("mongoose").Document<unknown, {}, import("./models/time-exception.schema").TimeException, {}, {}> & import("./models/time-exception.schema").TimeException & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
     }>;
     approveTimeException(id: string, approvedBy: string): Promise<{
         success: boolean;

@@ -40,7 +40,9 @@ exports.PayrollConfigurationModule = PayrollConfigurationModule = __decorate([
         ],
         controllers: [payroll_configuration_controller_1.PayrollConfigurationController],
         providers: [payroll_configuration_service_1.PayrollConfigurationService],
-        exports: [payroll_configuration_service_1.PayrollConfigurationService]
+        exports: [payroll_configuration_service_1.PayrollConfigurationService,
+            mongoose_1.MongooseModule
+        ]
     })
 ], PayrollConfigurationModule);
 //# sourceMappingURL=payroll-configuration.module.js.map

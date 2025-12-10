@@ -6,6 +6,11 @@ import { TimeExceptionUpdateDto } from '../dtos/update-time-exception.dto';
 export declare class TimeExceptionService {
     private readonly timeExceptionModel;
     constructor(timeExceptionModel: Model<TimeException>);
+    create(dto: TimeExceptionCreateDto): Promise<import("mongoose").Document<unknown, {}, TimeException, {}, {}> & TimeException & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }>;
     listAll(): Promise<(import("mongoose").Document<unknown, {}, TimeException, {}, {}> & TimeException & {
         _id: Types.ObjectId;
     } & {
@@ -51,11 +56,6 @@ export declare class TimeExceptionService {
         success: boolean;
         message: string;
         count: number;
-    }>;
-    create(dto: TimeExceptionCreateDto): Promise<import("mongoose").Document<unknown, {}, TimeException, {}, {}> & TimeException & {
-        _id: Types.ObjectId;
-    } & {
-        __v: number;
     }>;
     forcePending(id: string): Promise<(import("mongoose").Document<unknown, {}, TimeException, {}, {}> & TimeException & {
         _id: Types.ObjectId;

@@ -35,6 +35,7 @@ const shift_service_1 = require("./services/shift.service");
 const time_exception_service_1 = require("./services/time-exception.service");
 const overtime_rule_service_1 = require("./services/overtime-rule.service");
 const lateness_rule_service_1 = require("./services/lateness-rule.service");
+const create_time_exception_dto_1 = require("./dtos/create-time-exception.dto");
 const overtime_rule_create_dto_1 = require("./dtos/overtime-rule-create.dto");
 const overtime_rule_update_dto_1 = require("./dtos/overtime-rule-update.dto");
 const lateness_rule_create_dto_1 = require("./dtos/lateness-rule-create.dto");
@@ -260,6 +261,9 @@ let TimeManagementController = class TimeManagementController {
     }
     async deleteShift(shiftId) {
         return this.shiftService.deleteShift(shiftId);
+    }
+    async createTimeException(dto) {
+        return this.timeExceptionService.create(dto);
     }
     async approveTimeException(id, approvedBy) {
         return this.timeExceptionService.approve(id, approvedBy);
@@ -685,6 +689,15 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], TimeManagementController.prototype, "deleteShift", null);
+__decorate([
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    (0, roles_decorator_1.Roles)(employee_profile_enums_1.SystemRole.DEPARTMENT_HEAD, employee_profile_enums_1.SystemRole.HR_ADMIN),
+    (0, common_1.Post)('time-exception'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_time_exception_dto_1.TimeExceptionCreateDto]),
+    __metadata("design:returntype", Promise)
+], TimeManagementController.prototype, "createTimeException", null);
 __decorate([
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
     (0, roles_decorator_1.Roles)(employee_profile_enums_1.SystemRole.DEPARTMENT_HEAD, employee_profile_enums_1.SystemRole.HR_ADMIN),

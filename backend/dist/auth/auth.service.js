@@ -53,13 +53,16 @@ const mongoose_2 = require("mongoose");
 const bcrypt = __importStar(require("bcrypt"));
 const employee_profile_schema_1 = require("../employee-profile/models/employee-profile.schema");
 const employee_system_role_schema_1 = require("../employee-profile/models/employee-system-role.schema");
+const candidate_schema_1 = require("../employee-profile/models/candidate.schema");
 let AuthService = class AuthService {
     employeeProfileModel;
     employeeRoleModel;
+    candidateModel;
     jwtService;
-    constructor(employeeProfileModel, employeeRoleModel, jwtService) {
+    constructor(employeeProfileModel, employeeRoleModel, candidateModel, jwtService) {
         this.employeeProfileModel = employeeProfileModel;
         this.employeeRoleModel = employeeRoleModel;
+        this.candidateModel = candidateModel;
         this.jwtService = jwtService;
     }
     async register(registerDto) {
@@ -142,13 +145,47 @@ let AuthService = class AuthService {
     async findByEmployeeNumber(employeeNumber) {
         return this.employeeProfileModel.findOne({ employeeNumber });
     }
+    async candidateLogin(email, password) {
+        if (!password || password.trim() === '') {
+            throw new common_1.UnauthorizedException('Password is required');
+        }
+        const candidate = await this.candidateModel
+            .findOne({ personalEmail: email.toLowerCase() });
+        if (!candidate) {
+            throw new common_1.NotFoundException('Candidate not found');
+        }
+        if (!candidate.password) {
+            throw new common_1.UnauthorizedException('Password not set for this candidate');
+        }
+        const isPasswordValid = await bcrypt.compare(password, candidate.password);
+        if (!isPasswordValid) {
+            throw new common_1.UnauthorizedException('Invalid credentials');
+        }
+        const payload = {
+            userid: candidate._id,
+            userType: 'candidate',
+            candidateNumber: candidate.candidateNumber,
+            email: candidate.personalEmail,
+            status: candidate.status,
+        };
+        return {
+            access_token: await this.jwtService.signAsync(payload),
+            payload: {
+                userid: candidate._id,
+                userType: 'candidate',
+                status: candidate.status,
+            },
+        };
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_1.InjectModel)(employee_profile_schema_1.EmployeeProfile.name)),
     __param(1, (0, mongoose_1.InjectModel)(employee_system_role_schema_1.EmployeeSystemRole.name)),
+    __param(2, (0, mongoose_1.InjectModel)(candidate_schema_1.Candidate.name)),
     __metadata("design:paramtypes", [mongoose_2.Model,
+        mongoose_2.Model,
         mongoose_2.Model,
         jwt_1.JwtService])
 ], AuthService);

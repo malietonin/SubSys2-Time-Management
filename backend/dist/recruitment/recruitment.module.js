@@ -22,8 +22,6 @@ const document_schema_1 = require("./models/document.schema");
 const termination_request_schema_1 = require("./models/termination-request.schema");
 const clearance_checklist_schema_1 = require("./models/clearance-checklist.schema");
 const onboarding_schema_1 = require("./models/onboarding.schema");
-const employee_profile_module_1 = require("../employee-profile/employee-profile.module");
-const time_management_module_1 = require("../time-management/time-management.module");
 const recruitment_controller_1 = require("./controllers/recruitment.controller");
 const onboarding_controller_1 = require("./controllers/onboarding.controller");
 const offboarding_controller_1 = require("./controllers/offboarding.controller");
@@ -34,10 +32,8 @@ const auth_module_1 = require("../auth/auth.module");
 const performance_module_1 = require("../performance/performance.module");
 const payroll_execution_module_1 = require("../payroll-execution/payroll-execution.module");
 const payroll_configuration_module_1 = require("../payroll-configuration/payroll-configuration.module");
-const EmployeeSigningBonus_schema_1 = require("../payroll-execution/models/EmployeeSigningBonus.schema");
-const employeePayrollDetails_schema_1 = require("../payroll-execution/models/employeePayrollDetails.schema");
-const payrollRuns_schema_1 = require("../payroll-execution/models/payrollRuns.schema");
-const signingBonus_schema_1 = require("../payroll-configuration/models/signingBonus.schema");
+const employee_profile_module_1 = require("../employee-profile/employee-profile.module");
+const time_management_module_1 = require("../time-management/time-management.module");
 let RecruitmentModule = class RecruitmentModule {
 };
 exports.RecruitmentModule = RecruitmentModule;
@@ -58,10 +54,6 @@ exports.RecruitmentModule = RecruitmentModule = __decorate([
                 { name: document_schema_1.Document.name, schema: document_schema_1.DocumentSchema },
                 { name: termination_request_schema_1.TerminationRequest.name, schema: termination_request_schema_1.TerminationRequestSchema },
                 { name: clearance_checklist_schema_1.ClearanceChecklist.name, schema: clearance_checklist_schema_1.ClearanceChecklistSchema },
-                { name: EmployeeSigningBonus_schema_1.employeeSigningBonus.name, schema: EmployeeSigningBonus_schema_1.employeeSigningBonusSchema },
-                { name: employeePayrollDetails_schema_1.employeePayrollDetails.name, schema: employeePayrollDetails_schema_1.employeePayrollDetailsSchema },
-                { name: payrollRuns_schema_1.payrollRuns.name, schema: payrollRuns_schema_1.payrollRunsSchema },
-                { name: signingBonus_schema_1.signingBonus.name, schema: signingBonus_schema_1.signingBonusSchema },
             ]),
             employee_profile_module_1.EmployeeProfileModule,
             time_management_module_1.TimeManagementModule,

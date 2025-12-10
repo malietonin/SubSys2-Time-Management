@@ -24,11 +24,17 @@ const application_schema_1 = require("../models/application.schema");
 const application_status_enum_1 = require("../enums/application-status.enum");
 const document_schema_1 = require("../models/document.schema");
 const employee_profile_service_1 = require("../../employee-profile/employee-profile.service");
+const employee_profile_enums_1 = require("../../employee-profile/enums/employee-profile.enums");
 const payroll_execution_service_1 = require("../../payroll-execution/payroll-execution.service");
 const payrollRuns_schema_1 = require("../../payroll-execution/models/payrollRuns.schema");
 const employeePayrollDetails_schema_1 = require("../../payroll-execution/models/employeePayrollDetails.schema");
 const EmployeeSigningBonus_schema_1 = require("../../payroll-execution/models/EmployeeSigningBonus.schema");
 const signingBonus_schema_1 = require("../../payroll-configuration/models/signingBonus.schema");
+const employee_role_service_1 = require("../../employee-profile/services/employee-role.service");
+const auth_service_1 = require("../../auth/auth.service");
+const payroll_configuration_service_1 = require("../../payroll-configuration/payroll-configuration.service");
+const payroll_configuration_enums_1 = require("../../payroll-configuration/enums/payroll-configuration-enums");
+const payroll_execution_enum_1 = require("../../payroll-execution/enums/payroll-execution-enum");
 let OnboardingService = class OnboardingService {
     onboardingModel;
     contractModel;
@@ -41,8 +47,11 @@ let OnboardingService = class OnboardingService {
     signingBonusConfigModel;
     notificationLogService;
     employeeCrudService;
-    payrollExectutionService;
-    constructor(onboardingModel, contractModel, offerModel, documentModel, applicationModel, employeeSigningBonusModel, employeePayrollDetailsModel, payrollRunsModel, signingBonusConfigModel, notificationLogService, employeeCrudService, payrollExectutionService) {
+    payrollExecutionService;
+    employeeRoleService;
+    authService;
+    payrollConfigurationService;
+    constructor(onboardingModel, contractModel, offerModel, documentModel, applicationModel, employeeSigningBonusModel, employeePayrollDetailsModel, payrollRunsModel, signingBonusConfigModel, notificationLogService, employeeCrudService, payrollExecutionService, employeeRoleService, authService, payrollConfigurationService) {
         this.onboardingModel = onboardingModel;
         this.contractModel = contractModel;
         this.offerModel = offerModel;
@@ -54,7 +63,10 @@ let OnboardingService = class OnboardingService {
         this.signingBonusConfigModel = signingBonusConfigModel;
         this.notificationLogService = notificationLogService;
         this.employeeCrudService = employeeCrudService;
-        this.payrollExectutionService = payrollExectutionService;
+        this.payrollExecutionService = payrollExecutionService;
+        this.employeeRoleService = employeeRoleService;
+        this.authService = authService;
+        this.payrollConfigurationService = payrollConfigurationService;
     }
     async createContract(contractData) {
         const newContract = new this.contractModel(contractData);
@@ -99,83 +111,89 @@ let OnboardingService = class OnboardingService {
                 message: 'Your employment contract has been fully signed. Welcome aboard!',
             });
         }
-        if (updatedContract.employeeSignedAt &&
-            updatedContract.employerSignedAt &&
+        if (updatedContract.employeeSignedAt && updatedContract.employerSignedAt &&
             (!currentContract.employeeSignedAt || !currentContract.employerSignedAt)) {
             const application = await this.applicationModel.findById(offer.applicationId);
             if (application) {
                 await this.applicationModel.findByIdAndUpdate(offer.applicationId, { status: application_status_enum_1.ApplicationStatus.HIRED }, { new: true });
-                if (updatedContract.signingBonus && updatedContract.signingBonus > 0) {
-                    const signingBonusConfig = await this.signingBonusConfigModel
-                        .findOne({
-                        status: 'APPROVED',
-                    })
-                        .sort({ createdAt: -1 })
-                        .exec();
-                    if (!signingBonusConfig) {
-                        throw new common_1.NotFoundException('No approved signing bonus configuration found');
-                    }
-                    const signingBonusRecord = await this.employeeSigningBonusModel.create({
-                        employeeId: candidateID,
-                        signingBonusId: signingBonusConfig._id,
-                        givenAmount: updatedContract.signingBonus,
-                        paymentDate: null,
-                        status: 'PENDING',
-                    });
-                    await this.notificationLogService.sendNotification({
-                        to: hrManagerID,
-                        type: 'Signing Bonus Approval Required',
-                        message: `New hire signing bonus of ${updatedContract.signingBonus} requires approval for employee ${candidateID}`,
-                    });
-                }
-                const currentDate = new Date();
-                const currentPayrollRun = await this.payrollRunsModel.findOne({
-                    payrollPeriod: {
-                        $gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1),
-                        $lt: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1),
-                    },
-                    status: { $in: ['DRAFT', 'IN_PROGRESS'] },
-                });
-                if (currentPayrollRun) {
-                    await this.employeePayrollDetailsModel.create({
-                        employeeId: candidateID,
-                        payrollRunId: currentPayrollRun._id,
-                        baseSalary: updatedContract.grossSalary,
-                        allowances: 0,
-                        deductions: 0,
-                        netSalary: updatedContract.grossSalary,
-                        netPay: updatedContract.grossSalary,
-                        bankStatus: 'MISSING',
-                        bonus: updatedContract.signingBonus || 0,
-                        benefit: 0,
-                        exceptions: `New hire - Start date: ${updatedContract.employerSignedAt}`,
-                    });
-                }
+                const payrollManagers = await this.employeeRoleService.getEmployeesByRole(employee_profile_enums_1.SystemRole.PAYROLL_MANAGER);
+                if (!payrollManagers || payrollManagers.length === 0)
+                    throw new common_1.NotFoundException('Payroll Managers not found');
+                const payrollManager = payrollManagers[0];
+                const systemAdmins = await this.employeeRoleService.getEmployeesByRole(employee_profile_enums_1.SystemRole.SYSTEM_ADMIN);
+                if (!systemAdmins || systemAdmins.length === 0)
+                    throw new common_1.NotFoundException('System Admins managers not found');
+                const systemAdmin = systemAdmins[0];
                 await this.notificationLogService.sendNotification({
-                    to: hrManagerID,
+                    to: payrollManager.id,
+                    type: 'Payroll provisioning required',
+                    message: `Require payroll provisioning for new hire ${candidateID}`,
+                });
+                await this.notificationLogService.sendNotification({
+                    to: systemAdmin.id,
+                    type: 'System access provisioning required',
+                    message: `Require requires system access provisioning for new hire ${candidateID}`,
+                });
+                await this.notificationLogService.sendNotification({
+                    to: systemAdmin._id,
+                    type: 'Email access provisioning required',
+                    message: `Require Email system access provisioning for new hire ${candidateID}`,
+                });
+                await this.notificationLogService.sendNotification({
+                    to: systemAdmin.id,
                     type: 'New Hire Equipment Setup Required',
                     message: `New hire equipment and workspace setup needed for employee ID: ${offer.candidateId}. Please reserve: desk, laptop, access card, and other equipment.`,
                 });
-                await this.notificationLogService.sendNotification({
-                    to: hrManagerID,
-                    type: 'System Access Provisioning Required',
-                    message: `New hire requires system access provisioning for employee ID: ${offer.candidateId}. Please set up: Email account, Payroll system access, Internal systems access, VPN credentials, and other required system permissions.`,
-                });
-                await this.notificationLogService.sendNotification({
-                    to: hrManagerID,
-                    type: 'Email Account Setup Required',
-                    message: `Please create email account and configure access for new hire (Employee ID: ${offer.candidateId}). Ensure email is active before Day 1.`,
-                });
-                await this.notificationLogService.sendNotification({
-                    to: hrManagerID,
-                    type: 'Payroll System Access Required',
-                    message: `New hire needs payroll system access (Employee ID: ${offer.candidateId}). Please provision account and send credentials securely.`,
-                });
-                await this.notificationLogService.sendNotification({
-                    to: candidateID,
-                    type: 'Welcome! System Setup in Progress',
-                    message: 'Welcome to the team! Our IT team is setting up your email, payroll access, and internal systems. You will receive your credentials before your start date.',
-                });
+                try {
+                    await this.authService.register({
+                        employeeNumber: '--',
+                        workEmail: '--',
+                        password: '--',
+                        firstName: '--',
+                        lastName: '--',
+                        nationalId: '--',
+                        dateOfHire: new Date().toISOString(),
+                    });
+                    console.log('Employee account provisioned with placeholder data');
+                }
+                catch (error) {
+                    console.error('Failed to provision employee account:', error);
+                }
+                try {
+                    if (updatedContract.signingBonus && updatedContract.signingBonus > 0) {
+                        const newSigningBonus = await this.payrollConfigurationService.createSigningBonuses({
+                            positionName: updatedContract.role,
+                            amount: updatedContract.signingBonus,
+                            status: payroll_configuration_enums_1.ConfigStatus.DRAFT
+                        });
+                        await this.payrollExecutionService.approveSigningBonus(newSigningBonus?.id);
+                    }
+                }
+                catch (error) {
+                    console.error('Error processing signing bonus:', error);
+                }
+                try {
+                    const contractSigningDate = updatedContract.employerSignedAt || new Date();
+                    const payrollPeriodEnd = new Date(contractSigningDate.getFullYear(), contractSigningDate.getMonth() + 1, 0);
+                    const existingPayrollRun = await this.payrollRunsModel.findOne({
+                        payrollPeriod: payrollPeriodEnd,
+                        status: payroll_execution_enum_1.PayRollStatus.DRAFT
+                    }).exec();
+                    if (!existingPayrollRun) {
+                        console.warn('No draft payroll run found for this period.');
+                    }
+                    else {
+                        console.log(`Found existing draft payroll run: ${existingPayrollRun.runId}`);
+                        const initiationResult = await this.payrollExecutionService.startPayrollInitiation({
+                            payrollRunId: existingPayrollRun._id.toString(),
+                            payrollSpecialistId: payrollManager.id.toString(),
+                        });
+                        console.log(`Payroll initiation started: ${initiationResult.message}`);
+                    }
+                }
+                catch (error) {
+                    console.error('Error handling payroll initiation:', error);
+                }
             }
         }
         return updatedContract;
@@ -272,6 +290,9 @@ exports.OnboardingService = OnboardingService = __decorate([
         mongoose_2.Model,
         notification_log_service_1.NotificationLogService,
         employee_profile_service_1.EmployeeProfileService,
-        payroll_execution_service_1.PayrollExecutionService])
+        payroll_execution_service_1.PayrollExecutionService,
+        employee_role_service_1.EmployeeRoleService,
+        auth_service_1.AuthService,
+        payroll_configuration_service_1.PayrollConfigurationService])
 ], OnboardingService);
 //# sourceMappingURL=onboarding.service.js.map

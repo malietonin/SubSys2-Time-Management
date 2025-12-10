@@ -22,27 +22,38 @@ const termination_status_enum_1 = require("../enums/termination-status.enum");
 const termination_initiation_enum_1 = require("../enums/termination-initiation.enum");
 const approval_status_enum_1 = require("../enums/approval-status.enum");
 const employee_profile_enums_1 = require("../../employee-profile/enums/employee-profile.enums");
-const notification_log_service_1 = require("../../time-management/services/notification-log.service");
-const employee_crud_service_1 = require("../../employee-profile/services/employee-crud.service");
 const employee_role_service_1 = require("../../employee-profile/services/employee-role.service");
 const hr_admin_service_1 = require("../../employee-profile/services/hr-admin.service");
 const performance_service_1 = require("../../performance/performance.service");
+const notification_log_service_1 = require("../../time-management/services/notification-log.service");
+const EmployeeTerminationResignation_schema_1 = require("../../payroll-execution/models/EmployeeTerminationResignation.schema");
+const payroll_configuration_service_1 = require("../../payroll-configuration/payroll-configuration.service");
+const terminationAndResignationBenefits_1 = require("../../payroll-configuration/models/terminationAndResignationBenefits");
+const payroll_execution_service_1 = require("../../payroll-execution/payroll-execution.service");
+const payroll_configuration_enums_1 = require("../../payroll-configuration/enums/payroll-configuration-enums");
+const payroll_execution_enum_1 = require("../../payroll-execution/enums/payroll-execution-enum");
 let OffboardingService = class OffboardingService {
     terminationRequestModel;
     clearanceChecklistModel;
+    exitBenefitsModel;
+    exitBenefitsConfigModel;
     notificationLogService;
     hrAdminService;
-    employeeCrudService;
     employeeRoleService;
     performanceService;
-    constructor(terminationRequestModel, clearanceChecklistModel, notificationLogService, hrAdminService, employeeCrudService, employeeRoleService, performanceService) {
+    payrollExecutionService;
+    payrollConfigService;
+    constructor(terminationRequestModel, clearanceChecklistModel, exitBenefitsModel, exitBenefitsConfigModel, notificationLogService, hrAdminService, employeeRoleService, performanceService, payrollExecutionService, payrollConfigService) {
         this.terminationRequestModel = terminationRequestModel;
         this.clearanceChecklistModel = clearanceChecklistModel;
+        this.exitBenefitsModel = exitBenefitsModel;
+        this.exitBenefitsConfigModel = exitBenefitsConfigModel;
         this.notificationLogService = notificationLogService;
         this.hrAdminService = hrAdminService;
-        this.employeeCrudService = employeeCrudService;
         this.employeeRoleService = employeeRoleService;
         this.performanceService = performanceService;
+        this.payrollExecutionService = payrollExecutionService;
+        this.payrollConfigService = payrollConfigService;
     }
     async createTerminationRequest(terminationRequestData) {
         let shouldCreateRequest = false;
@@ -66,7 +77,7 @@ let OffboardingService = class OffboardingService {
                                 const newTerminationRequest = new this.terminationRequestModel(terminationRequestData);
                                 const savedRequest = await newTerminationRequest.save();
                                 await this.notificationLogService.sendNotification({
-                                    to: savedRequest.employeeId,
+                                    to: newTerminationRequest.employeeId,
                                     type: 'Termination Notice - Poor Performance',
                                     message: `A termination request has been initiated due to performance below minimum acceptable standards. Your latest appraisal score: ${appraisalRecord.totalScore}/${template.ratingScale.max} (Minimum required: ${template.ratingScale.min}). Reason: ${savedRequest.reason}. Please contact HR immediately.`,
                                 });
@@ -144,14 +155,6 @@ let OffboardingService = class OffboardingService {
                 type: 'Resignation Request Approved',
                 message: `Your resignation request has been approved. Your last working day will be ${terminationDateStr}. Please complete your clearance checklist before departure.`,
             });
-            const payrollManagers = await this.employeeRoleService.getEmployeesByRole(employee_profile_enums_1.SystemRole.PAYROLL_MANAGER);
-            if (payrollManagers && payrollManagers.length > 0) {
-                await this.notificationLogService.sendNotification({
-                    to: payrollManagers[0].id,
-                    type: 'Final Pay Calculation Required',
-                    message: `Employee ${updatedTerminationRequest.employeeId} termination approved. Last working day: ${terminationDateStr}. Please calculate: unused leave days, final salary, deductions, and prepare settlement. Termination ID: ${id}`,
-                });
-            }
             const hrManagers = await this.employeeRoleService.getEmployeesByRole(employee_profile_enums_1.SystemRole.HR_MANAGER);
             if (hrManagers && hrManagers.length > 0) {
                 await this.notificationLogService.sendNotification({
@@ -176,11 +179,29 @@ let OffboardingService = class OffboardingService {
                     message: `Employee ${updatedTerminationRequest.employeeId} termination approved. Please sign off for the employee's financial records. Termination date: ${terminationDateStr}`,
                 });
             }
-            const systemAdminUserId = systemAdmins && systemAdmins.length > 0 ? systemAdmins[0].employeeProfileId.toString() : 'SYSTEM';
-            await this.hrAdminService.deactivateEmployee(updatedTerminationRequest.employeeId.toString(), systemAdminUserId, employee_profile_enums_1.SystemRole.SYSTEM_ADMIN, employee_profile_enums_1.EmployeeStatus.TERMINATED, updatedTerminationRequest.terminationDate || new Date());
+            if (updatedTerminationRequest.initiator === termination_initiation_enum_1.TerminationInitiation.HR) {
+                await this.hrAdminService.deactivateEmployee(updatedTerminationRequest.employeeId.toString(), systemAdmins[0].id, employee_profile_enums_1.SystemRole.SYSTEM_ADMIN, employee_profile_enums_1.EmployeeStatus.TERMINATED, updatedTerminationRequest.terminationDate || new Date());
+            }
+            const approvedExitBenefitTemplate = await this.exitBenefitsConfigModel.findOne({ status: payroll_configuration_enums_1.ConfigStatus.APPROVED }).exec();
+            if (!approvedExitBenefitTemplate)
+                throw new common_1.NotFoundException('cannot find benefit template');
+            const exitBenefitsRecord = new this.exitBenefitsModel({
+                employeeId: updatedTerminationRequest.employeeId,
+                benefitId: approvedExitBenefitTemplate._id,
+                terminationId: updatedTerminationRequest._id,
+                status: payroll_execution_enum_1.BenefitStatus.PENDING,
+            });
+            await exitBenefitsRecord.save();
+            const payrollManagers = await this.employeeRoleService.getEmployeesByRole(employee_profile_enums_1.SystemRole.PAYROLL_MANAGER);
+            if (payrollManagers && payrollManagers.length > 0) {
+                await this.notificationLogService.sendNotification({
+                    to: payrollManagers[0].id,
+                    type: 'Exit Benefits Approval Required',
+                    message: ` Exit benefits record auto-created for employee ${updatedTerminationRequest.employeeId}.(Base Amount: ${approvedExitBenefitTemplate.amount} . Require signing`,
+                });
+            }
         }
-        if (currentTerminationRequest.status !== termination_status_enum_1.TerminationStatus.REJECTED &&
-            updatedTerminationRequest.status === termination_status_enum_1.TerminationStatus.REJECTED) {
+        if (currentTerminationRequest.status !== termination_status_enum_1.TerminationStatus.REJECTED && updatedTerminationRequest.status === termination_status_enum_1.TerminationStatus.REJECTED) {
             await this.notificationLogService.sendNotification({
                 to: updatedTerminationRequest.employeeId,
                 type: 'Resignation Request Rejected',
@@ -266,12 +287,17 @@ exports.OffboardingService = OffboardingService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_1.InjectModel)(termination_request_schema_1.TerminationRequest.name)),
     __param(1, (0, mongoose_1.InjectModel)(clearance_checklist_schema_1.ClearanceChecklist.name)),
+    __param(2, (0, mongoose_1.InjectModel)(EmployeeTerminationResignation_schema_1.EmployeeTerminationResignation.name)),
+    __param(3, (0, mongoose_1.InjectModel)(terminationAndResignationBenefits_1.terminationAndResignationBenefits.name)),
     __metadata("design:paramtypes", [mongoose_2.Model,
+        mongoose_2.Model,
+        mongoose_2.Model,
         mongoose_2.Model,
         notification_log_service_1.NotificationLogService,
         hr_admin_service_1.HrAdminService,
-        employee_crud_service_1.EmployeeCrudService,
         employee_role_service_1.EmployeeRoleService,
-        performance_service_1.PerformanceService])
+        performance_service_1.PerformanceService,
+        payroll_execution_service_1.PayrollExecutionService,
+        payroll_configuration_service_1.PayrollConfigurationService])
 ], OffboardingService);
 //# sourceMappingURL=offboarding.service.js.map

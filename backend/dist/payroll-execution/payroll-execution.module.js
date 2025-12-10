@@ -71,7 +71,9 @@ exports.PayrollExecutionModule = PayrollExecutionModule = __decorate([
             payroll_phase3_service_1.PayrollPhase3Service,
             payroll_phase4_service_1.PayrollPhase4Service
         ],
-        exports: [payroll_execution_service_1.PayrollExecutionService],
+        exports: [payroll_execution_service_1.PayrollExecutionService,
+            mongoose_1.MongooseModule
+        ],
     })
 ], PayrollExecutionModule);
 //# sourceMappingURL=payroll-execution.module.js.map

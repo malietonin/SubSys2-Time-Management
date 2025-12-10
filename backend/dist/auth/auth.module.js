@@ -14,6 +14,7 @@ const auth_service_1 = require("./auth.service");
 const auth_controller_1 = require("./auth.controller");
 const employee_profile_schema_1 = require("../employee-profile/models/employee-profile.schema");
 const employee_system_role_schema_1 = require("../employee-profile/models/employee-system-role.schema");
+const candidate_schema_1 = require("../employee-profile/models/candidate.schema");
 const authentication_middleware_1 = require("./middleware/authentication.middleware");
 const auth_guard_1 = require("./guards/auth.guard");
 const roles_guard_1 = require("./guards/roles.guard");
@@ -27,6 +28,7 @@ exports.AuthModule = AuthModule = __decorate([
             mongoose_1.MongooseModule.forFeature([
                 { name: employee_profile_schema_1.EmployeeProfile.name, schema: employee_profile_schema_1.EmployeeProfileSchema },
                 { name: employee_system_role_schema_1.EmployeeSystemRole.name, schema: employee_system_role_schema_1.EmployeeSystemRoleSchema },
+                { name: candidate_schema_1.Candidate.name, schema: candidate_schema_1.CandidateSchema },
             ]),
             jwt_1.JwtModule.register({
                 secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',

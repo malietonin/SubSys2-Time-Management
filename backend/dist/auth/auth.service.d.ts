@@ -2,12 +2,14 @@ import { JwtService } from '@nestjs/jwt';
 import { Model, Types } from 'mongoose';
 import { EmployeeProfile } from '../employee-profile/models/employee-profile.schema';
 import { EmployeeSystemRole } from '../employee-profile/models/employee-system-role.schema';
+import { Candidate } from '../employee-profile/models/candidate.schema';
 import { RegisterDto } from './dto/register.dto';
 export declare class AuthService {
     private employeeProfileModel;
     private employeeRoleModel;
+    private candidateModel;
     private jwtService;
-    constructor(employeeProfileModel: Model<EmployeeProfile>, employeeRoleModel: Model<EmployeeSystemRole>, jwtService: JwtService);
+    constructor(employeeProfileModel: Model<EmployeeProfile>, employeeRoleModel: Model<EmployeeSystemRole>, candidateModel: Model<Candidate>, jwtService: JwtService);
     register(registerDto: RegisterDto): Promise<string>;
     signIn(employeeNumber: string, password: string): Promise<{
         access_token: string;
@@ -22,4 +24,12 @@ export declare class AuthService {
     } & {
         __v: number;
     }) | null>;
+    candidateLogin(email: string, password: string): Promise<{
+        access_token: string;
+        payload: {
+            userid: Types.ObjectId;
+            userType: string;
+            status: string;
+        };
+    }>;
 }

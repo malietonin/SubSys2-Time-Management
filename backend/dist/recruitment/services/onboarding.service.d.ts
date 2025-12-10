@@ -17,6 +17,9 @@ import { payrollRuns } from 'src/payroll-execution/models/payrollRuns.schema';
 import { employeePayrollDetails } from 'src/payroll-execution/models/employeePayrollDetails.schema';
 import { employeeSigningBonus } from 'src/payroll-execution/models/EmployeeSigningBonus.schema';
 import { signingBonus } from 'src/payroll-configuration/models/signingBonus.schema';
+import { EmployeeRoleService } from 'src/employee-profile/services/employee-role.service';
+import { AuthService } from 'src/auth/auth.service';
+import { PayrollConfigurationService } from 'src/payroll-configuration/payroll-configuration.service';
 export declare class OnboardingService {
     private readonly onboardingModel;
     private readonly contractModel;
@@ -29,8 +32,11 @@ export declare class OnboardingService {
     private readonly signingBonusConfigModel;
     private readonly notificationLogService;
     private readonly employeeCrudService;
-    private readonly payrollExectutionService;
-    constructor(onboardingModel: Model<OnboardingDocument>, contractModel: Model<ContractDocument>, offerModel: Model<OfferDocument>, documentModel: Model<DocumentDocument>, applicationModel: Model<ApplicationDocument>, employeeSigningBonusModel: Model<employeeSigningBonus>, employeePayrollDetailsModel: Model<employeePayrollDetails>, payrollRunsModel: Model<payrollRuns>, signingBonusConfigModel: Model<signingBonus>, notificationLogService: NotificationLogService, employeeCrudService: EmployeeProfileService, payrollExectutionService: PayrollExecutionService);
+    private readonly payrollExecutionService;
+    private readonly employeeRoleService;
+    private readonly authService;
+    private readonly payrollConfigurationService;
+    constructor(onboardingModel: Model<OnboardingDocument>, contractModel: Model<ContractDocument>, offerModel: Model<OfferDocument>, documentModel: Model<DocumentDocument>, applicationModel: Model<ApplicationDocument>, employeeSigningBonusModel: Model<employeeSigningBonus>, employeePayrollDetailsModel: Model<employeePayrollDetails>, payrollRunsModel: Model<payrollRuns>, signingBonusConfigModel: Model<signingBonus>, notificationLogService: NotificationLogService, employeeCrudService: EmployeeProfileService, payrollExecutionService: PayrollExecutionService, employeeRoleService: EmployeeRoleService, authService: AuthService, payrollConfigurationService: PayrollConfigurationService);
     createContract(contractData: CreateContractDto): Promise<ContractDocument>;
     getAllContracts(): Promise<ContractDocument[]>;
     getContractById(contractId: string): Promise<ContractDocument>;
