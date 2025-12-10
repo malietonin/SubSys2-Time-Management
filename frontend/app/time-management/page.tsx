@@ -90,3 +90,9 @@ function DashboardCard({ title, description, icon }: { title: string; descriptio
     </div>
   );
 }
+
+// add shift assigment , employees can see their own shifts, admins can assign shifts, department heads can see their teams shifts
+// attendance can be manually edited by department heads
+// noificatioons should be added
+// rules should be added for hr managers only
+// reports should be added for hr and payroll only
