@@ -69,13 +69,27 @@ export default function TimeManagementPage() {
                 description="View attendance records for your team"
                 icon="👥"
               />
+              
+              
             )}
+             
+{isManagerOrAdmin && (
+  <Link href="/time-management/rules">
+    <DashboardCard
+      title="Rules"
+      description="Manage lateness, overtime, schedule & exceptions"
+      icon="⚙️"
+    />
+  </Link>
+)}
+
           </div>
         </div>
       </main>
     </div>
   );
 }
+
 
 function DashboardCard({ title, description, icon }: { title: string; description: string; icon: string; }) {
   return (
