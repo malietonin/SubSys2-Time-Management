@@ -11,3 +11,8 @@
 // set limits for permission duration
    // ensure only approved permissions affect payroll
    // (overtime and short time thresholds)
+
+// add rules button for hr managers to add new rules
+// view existing rules in a list or card format
+// edit or delete existing rules
+
