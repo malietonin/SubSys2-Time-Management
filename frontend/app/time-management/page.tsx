@@ -83,11 +83,14 @@ export default function TimeManagementPage() {
             )}
 
             {/* Notifications */}
-            <DashboardCard
-              title="Notifications"
-              description="Manage your notifications"
-              icon="🔔"
-            />
+            <Link href={'time-management/notifications'}>
+              <DashboardCard
+                title="Notifications"
+                description="Manage your notifications"
+                icon="🔔"
+              />            
+            </Link>
+
 
             {/* Reports - only for payroll and hr */}
             {isManagerOrAdminOrPayroll && (
