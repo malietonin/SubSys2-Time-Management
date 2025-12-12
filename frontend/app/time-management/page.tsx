@@ -50,11 +50,13 @@ export default function TimeManagementPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* My Timesheet */}
+            <Link href={'/time-management/timesheet'}>
             <DashboardCard
               title="My Timesheet"
               description="View and manage your weekly timesheets"
               icon="🗒️"
             />
+            </Link>
 
             {/* Clock In/Out - only for employees */}
             {isEmployee && (
