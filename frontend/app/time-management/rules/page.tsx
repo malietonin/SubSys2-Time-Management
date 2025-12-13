@@ -1,6 +1,5 @@
  "use client";
 
- 
 import { useAuth } from "@/app/(system)/context/authContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -58,13 +57,9 @@ if (!hasAccess) {
   // ----------------------------------
   const fetchAll = async () => {
     try {
-      const late = await  axiosInstance.get("/time-management/lateness-rule");
-      const over = await  axiosInstance.get("/time-management/overtime-rule");
-      const sched = await  axiosInstance.get("/time-management/schedule-rule");
-      console.log("Schedule rules:", sched.data);
-
-setScheduleRules(sched.data.data);
-
+      const late = await axiosInstance.get("/time-management/lateness-rules");
+      const over = await axiosInstance.get("/time-management/overtime-rules");
+      const sched = await axiosInstance.get("/time-management/schedule-rules");
       const ex = await axiosInstance.get("/time-exception");
 
       setLatenessRules(late.data.data);
@@ -85,9 +80,9 @@ setScheduleRules(sched.data.data);
   // ----------------------------------
   const deleteRule = async (type: string, id: string) => {
     const endpoints: Record<string, string> = {
-      lateness: `/time-management/lateness-rule/${id}`,
-      overtime: `/time-management/overtime-rule/${id}`,
-      schedule: `/time-management/schedule-rule/${id}`,
+      lateness: `/time-management/lateness-rules/${id}`,
+      overtime: `/time-management/overtime-rules/${id}`,
+      schedule: `/time-management/schedule-rules/${id}`,
       exception: `/time-exception/${id}`,
     };
 
@@ -123,15 +118,15 @@ setScheduleRules(sched.data.data);
   // ----------------------------------
   const handleSubmit = async () => {
     const createEndpoints: Record<string, string> = {
-      lateness: "/time-management/lateness-rule",
-      overtime: "/time-management/overtime-rule",
-      schedule: "/time-management/schedule-rule",
+      lateness: "/time-management/lateness-rules",
+      overtime: "/time-management/overtime-rules",
+      schedule: "/time-management/schedule-rules",
     };
 
     const updateEndpoints: Record<string, string> = {
-      lateness: `/time-management/lateness-rule/${editingRule?._id}`,
-      overtime: `/time-management/overtime-rule/${editingRule?._id}`,
-      schedule: `/time-management/schedule-rule/${editingRule?._id}`,
+      lateness: `/time-management/lateness-rules/${editingRule?._id}`,
+      overtime: `/time-management/overtime-rules/${editingRule?._id}`,
+      schedule: `/time-management/schedule-rules/${editingRule?._id}`,
     };
 
     try {
@@ -143,11 +138,10 @@ setScheduleRules(sched.data.data);
 
       setOpenModal(false);
       fetchAll();
-   } catch (err: any) {
-  console.log("SAVE ERROR FULL:", err.response?.data || err.message);
-  alert(JSON.stringify(err.response?.data, null, 2));
-}
-
+    } catch (err) {
+      console.log("Save error:", err);
+      alert("Failed to save rule");
+    }
   };
 
   // ----------------------------------
@@ -243,10 +237,7 @@ setScheduleRules(sched.data.data);
   // ----------------------------------
   // RULE SECTION CARD
   // ----------------------------------
-  console.log("Schedule rules state:", scheduleRules, Array.isArray(scheduleRules));
-
- const RuleSection = ({ title, type, data = [] }: RuleSectionProps) => (
-
+  const RuleSection = ({ title, type, data }: RuleSectionProps) => (
     <div className="border rounded-lg p-6 bg-gray-900 text-white shadow-lg mb-8">
       <h2 className="text-2xl font-bold mb-4">{title}</h2>
 
@@ -263,8 +254,7 @@ setScheduleRules(sched.data.data);
         <p className="text-gray-400">No rules found.</p>
       ) : (
         <ul className="space-y-4">
-        {Array.isArray(data) && data.map((rule: any) => (
-
+          {data.map((rule: any) => (
             <li
               key={rule._id}
               className="flex justify-between items-center p-4 border rounded bg-gray-800"
@@ -340,20 +330,3 @@ setScheduleRules(sched.data.data);
     
   );
 }
-
-// schedule rules 
-    // define scheduling rules
-// overtime rules
-    // set overtime rules
-    // set short time rules
-// lateness rules and penalties
-    // define lateness rules
-    // set penalties for lateness
-// set limits for permission duration
-   // ensure only approved permissions affect payroll
-   // (overtime and short time thresholds)
-
-// add rules button for hr managers to add new rules
-// view existing rules in a list or card format
-// edit or delete existing rules
-

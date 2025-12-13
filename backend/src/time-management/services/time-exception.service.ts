@@ -192,5 +192,4 @@ export class TimeExceptionService {
       data: updated,
     };
   }
-  
 }

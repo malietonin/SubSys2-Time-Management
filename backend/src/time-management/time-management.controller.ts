@@ -262,7 +262,7 @@ export class TimeManagementController {
     @Roles(SystemRole.HR_MANAGER)
     @Get('attendance-record/:employeeId/repeated-lateness') // hr manager
     async flagRepeatedLateness(@Param('employeeId') employeeId: string) {
-        return this.attendanceRecordService.flagRepeatedLateness(employeeId);
+       //malak deleted this ->> return this.attendanceRecordService.flagRepeatedLateness(employeeId);
     }
 
     // Attendance Correction Request Functions
@@ -521,7 +521,6 @@ export class TimeManagementController {
     async deleteLatenessRule(@Param('id') id: string) {
         return this.latenessRuleService.deleteLatenessRule(id);
     }
- 
 
-
+    
 }
