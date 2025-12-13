@@ -1,8 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { useAuth } from "@/app/(system)/context/authContext";
 
 export default function TimesheetPage() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  const rolesLower = user.roles?.map(r => r.toLowerCase()) || [];
+  const isAdmin = rolesLower.some(role =>
+    ['hr admin', 'system admin'].includes(role)
+  );
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -26,25 +42,33 @@ export default function TimesheetPage() {
           {/* GRID LIKE DASHBOARD */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-            {/* Current Shift Box */}
-            <Link href={'./timesheet/shift'}>
-            <DashboardCard
-              title="Current Shift"
-              description="View today's assigned shift details"
-              icon="🕒"
-            />            
-            </Link>
-
+            {/* Conditional Current Shift / Shift Management Box */}
+            {isAdmin ? (
+              <Link href={'/time-management/timesheet/shift'}>
+                <DashboardCard
+                  title="Shift Management"
+                  description="Assign and create shifts for employees, positions, or departments"
+                  icon="⏱️"
+                />            
+              </Link>
+            ) : (
+              <Link href={'./timesheet/shift'}>
+                <DashboardCard
+                  title="Current Shift"
+                  description="View today's assigned shift details"
+                  icon="🕒"
+                />            
+              </Link>
+            )}
 
             {/* Holidays Box */}
             <Link href={'./timesheet/holidays'}>
-            <DashboardCard
-              title="Holidays"
-              description="View your available holidays and requests"
-              icon="🏖️"
-            />            
+              <DashboardCard
+                title="Holidays"
+                description="View your available holidays and requests"
+                icon="🏖️"
+              />            
             </Link>
-
 
           </div>
         </div>

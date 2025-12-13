@@ -139,16 +139,19 @@ export class ShiftAssignmentService{
         }
         
     }
-    async getEmployeeShift(dto: ShiftAssignmentCreateDto){
-        const shiftAssignment = await this.shiftAssignmentModel.findOne({employeeId: dto.employeeId});
-        if(!shiftAssignment) return new NotFoundException("Shift assignment for employee with id " + dto.employeeId +" not found!");
+    async getEmployeeShift(employeeId: string){
+        const shiftAssignment = await this.shiftAssignmentModel.findOne({employeeId: employeeId});
+        if(!shiftAssignment) throw new NotFoundException("Shift assignment for employee with id " + employeeId +" not found!");
         const shift = await this.shiftModel.findOne({_id: shiftAssignment.shiftId});
-        if(!shift) return new NotFoundException(`Shift with ID ${shiftAssignment.shiftId} not found!`);
-        return{
-            success:true,
+        if(!shift) throw new NotFoundException(`Shift with ID ${shiftAssignment.shiftId} not found!`);
+        return {
+            success: true,
             message: "Shift found by employeeID",
-            data:shift
-        }
+            data: {
+                ...shift.toObject(),
+                assignment: shiftAssignment.toObject() // include assignment info
+            }
     }
+}
     
 }
