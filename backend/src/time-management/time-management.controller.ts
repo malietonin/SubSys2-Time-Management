@@ -93,6 +93,12 @@ export class TimeManagementController {
         return await this.shiftAssignmentService.extendShiftAssignment(dto,shiftAssignmentId)
     }
 
+    @UseGuards(AuthGuard)
+    @Get('shift-assignment/employee')
+    async getEmployeeShift(@Body() dto:ShiftAssignmentCreateDto){
+        return await this.shiftAssignmentService.getEmployeeShift(dto);
+    }
+
     // Notification Log Functions (kol da hr admin)
 
     @UseGuards(AuthGuard)
