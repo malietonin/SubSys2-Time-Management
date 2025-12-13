@@ -77,11 +77,13 @@ export default function TimeManagementPage() {
             
             {/* Rules */}
             {isManagerOrAdmin && (
+          <Link href={'time-management/rules'}>  
             <DashboardCard
               title="Rules"
               description="View company time management policies"
               icon="📜"
             />
+            </Link>
             )}
 
             {/* Notifications */}
