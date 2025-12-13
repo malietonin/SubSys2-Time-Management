@@ -59,5 +59,3 @@ dist/
 /dist/
 backend/dist/
 frontend/dist/
-
-.env
