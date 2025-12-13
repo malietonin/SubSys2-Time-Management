@@ -23,6 +23,14 @@ export default function TimeManagementPage() {
     ['hr admin', 'system admin', 'manager'].includes(role.toLowerCase())
   );
 
+  const isManagerOrAdminOrPayroll = user?.roles?.some(role =>
+    ['hr admin', 'system admin', 'manager', 'payroll manager', 'payroll specialist'].includes(role.toLowerCase())
+  );
+
+  const isEmployee = user?.roles?.some(role =>
+    ['hr employee', 'department employee'].includes(role.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Navigation Bar */}
@@ -42,32 +50,56 @@ export default function TimeManagementPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* My Timesheet */}
+            <Link href={'/time-management/timesheet'}>
             <DashboardCard
               title="My Timesheet"
               description="View and manage your weekly timesheets"
               icon="🗒️"
             />
+            </Link>
 
-            {/* Clock In/Out */}
-            <DashboardCard
-              title="Clock In / Out"
-              description="Record your start and end work times"
-              icon="⏱️"
-            />
+            {/* Clock In/Out - only for employees */}
+            {isEmployee && (
+              <DashboardCard
+                title="Clock In / Out"
+                description="Record your start and end work times"
+                icon="⏱️"
+              />
+            )}
 
-            {/* My Attendance */}
+            {/* Attendance */}
             <DashboardCard
-              title="My Attendance"
+              title="Attendance"
               description="Review your attendance history and patterns"
               icon="🗓️"
             />
 
-            {/* Team Attendance (for managers/admins) */}
+            
+            {/* Rules */}
             {isManagerOrAdmin && (
+            <DashboardCard
+              title="Rules"
+              description="View company time management policies"
+              icon="📜"
+            />
+            )}
+
+            {/* Notifications */}
+            <Link href={'time-management/notifications'}>
               <DashboardCard
-                title="Team Attendance"
-                description="View attendance records for your team"
-                icon="👥"
+                title="Notifications"
+                description="Manage your notifications"
+                icon="🔔"
+              />            
+            </Link>
+
+
+            {/* Reports - only for payroll and hr */}
+            {isManagerOrAdminOrPayroll && (
+              <DashboardCard
+                title="Reports"
+                description="Generate and view time management reports"
+                icon="📊"
               />
               
               

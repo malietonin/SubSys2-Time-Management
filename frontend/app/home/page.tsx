@@ -98,7 +98,7 @@ export default function HomePage() {
               Your Information
             </h3>
             <div className="space-y-2 text-gray-700 dark:text-gray-300">
-              <p><strong>Role:</strong> {user.role}</p>
+              <p><strong>Role:</strong> {user.roles}</p>
               <p><strong>Email:</strong> {user.email}</p>
               {user.age && <p><strong>Age:</strong> {user.age}</p>}
             </div>
