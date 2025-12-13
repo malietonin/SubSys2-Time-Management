@@ -57,9 +57,13 @@ if (!hasAccess) {
   // ----------------------------------
   const fetchAll = async () => {
     try {
-      const late = await axiosInstance.get("/time-management/lateness-rules");
-      const over = await axiosInstance.get("/time-management/overtime-rules");
-      const sched = await axiosInstance.get("/time-management/schedule-rules");
+      const late = await  axiosInstance.get("/time-management/lateness-rule");
+      const over = await  axiosInstance.get("/time-management/overtime-rule");
+      const sched = await  axiosInstance.get("/time-management/schedule-rule");
+      console.log("Schedule rules:", sched.data);
+
+setScheduleRules(sched.data.data);
+
       const ex = await axiosInstance.get("/time-exception");
 
       setLatenessRules(late.data.data);
@@ -80,9 +84,9 @@ if (!hasAccess) {
   // ----------------------------------
   const deleteRule = async (type: string, id: string) => {
     const endpoints: Record<string, string> = {
-      lateness: `/time-management/lateness-rules/${id}`,
-      overtime: `/time-management/overtime-rules/${id}`,
-      schedule: `/time-management/schedule-rules/${id}`,
+      lateness: `/time-management/lateness-rule/${id}`,
+      overtime: `/time-management/overtime-rule/${id}`,
+      schedule: `/time-management/schedule-rule/${id}`,
       exception: `/time-exception/${id}`,
     };
 
@@ -118,15 +122,15 @@ if (!hasAccess) {
   // ----------------------------------
   const handleSubmit = async () => {
     const createEndpoints: Record<string, string> = {
-      lateness: "/time-management/lateness-rules",
-      overtime: "/time-management/overtime-rules",
-      schedule: "/time-management/schedule-rules",
+      lateness: "/time-management/lateness-rule",
+      overtime: "/time-management/overtime-rule",
+      schedule: "/time-management/schedule-rule",
     };
 
     const updateEndpoints: Record<string, string> = {
-      lateness: `/time-management/lateness-rules/${editingRule?._id}`,
-      overtime: `/time-management/overtime-rules/${editingRule?._id}`,
-      schedule: `/time-management/schedule-rules/${editingRule?._id}`,
+      lateness: `/time-management/lateness-rule/${editingRule?._id}`,
+      overtime: `/time-management/overtime-rule/${editingRule?._id}`,
+      schedule: `/time-management/schedule-rule/${editingRule?._id}`,
     };
 
     try {
@@ -138,10 +142,11 @@ if (!hasAccess) {
 
       setOpenModal(false);
       fetchAll();
-    } catch (err) {
-      console.log("Save error:", err);
-      alert("Failed to save rule");
-    }
+   } catch (err: any) {
+  console.log("SAVE ERROR FULL:", err.response?.data || err.message);
+  alert(JSON.stringify(err.response?.data, null, 2));
+}
+
   };
 
   // ----------------------------------
@@ -237,7 +242,10 @@ if (!hasAccess) {
   // ----------------------------------
   // RULE SECTION CARD
   // ----------------------------------
-  const RuleSection = ({ title, type, data }: RuleSectionProps) => (
+  console.log("Schedule rules state:", scheduleRules, Array.isArray(scheduleRules));
+
+ const RuleSection = ({ title, type, data = [] }: RuleSectionProps) => (
+
     <div className="border rounded-lg p-6 bg-gray-900 text-white shadow-lg mb-8">
       <h2 className="text-2xl font-bold mb-4">{title}</h2>
 
@@ -254,7 +262,8 @@ if (!hasAccess) {
         <p className="text-gray-400">No rules found.</p>
       ) : (
         <ul className="space-y-4">
-          {data.map((rule: any) => (
+        {Array.isArray(data) && data.map((rule: any) => (
+
             <li
               key={rule._id}
               className="flex justify-between items-center p-4 border rounded bg-gray-800"

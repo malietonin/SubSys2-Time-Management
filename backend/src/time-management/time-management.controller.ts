@@ -521,6 +521,7 @@ export class TimeManagementController {
     async deleteLatenessRule(@Param('id') id: string) {
         return this.latenessRuleService.deleteLatenessRule(id);
     }
+ 
 
-    
+
 }
