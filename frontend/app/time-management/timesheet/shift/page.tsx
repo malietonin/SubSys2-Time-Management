@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 import { useAuth } from "@/app/(system)/context/authContext";
+import toast from "react-hot-toast";
 
 /* ===================== TYPES ===================== */
 
@@ -121,11 +122,11 @@ export default function Shift() {
         assignData,
         { withCredentials: true }
       );
-      alert("Shift assigned successfully!");
+      toast.success("Shift assigned successfully!");
       setAssignData({ shiftId: "", startDate: "" });
     } catch (err) {
       console.error(err);
-      alert("Failed to assign shift");
+      toast.error("Failed to assign shift");
     }
   }
 
@@ -137,7 +138,7 @@ export default function Shift() {
         shiftData,
         { withCredentials: true }
       );
-      alert("Shift created successfully!");
+      toast.success("Shift created successfully!");
       setShiftData({
         name: "",
         shiftType: "",
@@ -147,7 +148,7 @@ export default function Shift() {
       });
     } catch (err) {
       console.error(err);
-      alert("Failed to create shift");
+      toast.error("Failed to create shift");
     }
   }
 
