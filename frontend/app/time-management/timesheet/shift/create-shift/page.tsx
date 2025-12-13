@@ -13,7 +13,7 @@ type CreateShiftPayload = {
   shiftType: string;
   startTime: string;
   endTime: string;
-  punchPolicy: "FIRST_LAST" | "ALL";
+  punchPolicy: "FIRST_LAST" | "ONLY_FIRST" | "MULTIPLE";
   graceInMinutes: number;
   graceOutMinutes: number;
   requiresApprovalForOvertime: boolean;
@@ -209,12 +209,13 @@ export default function CreateShiftPage() {
                 onChange={(e) =>
                   setShiftData({
                     ...shiftData,
-                    punchPolicy: e.target.value as "FIRST_LAST" | "ALL",
+                    punchPolicy: e.target.value as "FIRST_LAST" | "MULTIPLE" | "ONLY_FIRST",
                   })
                 }
               >
                 <option value="FIRST_LAST">First In / Last Out</option>
-                <option value="ALL">All Punches</option>
+                <option value="MULTIPLE">Multiple</option>
+                <option value="ONLY_FIRST">Only First</option>
               </select>
             </div>
 

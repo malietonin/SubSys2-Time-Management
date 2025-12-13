@@ -103,6 +103,28 @@ export default function ShiftPage() {
                 />
               </Link>
 
+              <Link href="/time-management/timesheet/shift/view">
+                <DashboardCard
+                  title="View Shifts"
+                  description="View, update and delete existing shifts."
+                  icon="📋"
+                />
+              </Link>
+                <Link href="/time-management/timesheet/shift/shift-types/create">
+                <DashboardCard
+                  title="Create Shift Type"
+                  description="Create new shift type."
+                  icon="📝"
+                />
+              </Link>
+                <Link href="/time-management/timesheet/shift/shift-types/view">
+                <DashboardCard
+                  title="View Shift Types"
+                  description="View and delete existing shift types."
+                  icon="📝"
+                />
+              </Link>
+
             </div>
           </div>
         </main>
