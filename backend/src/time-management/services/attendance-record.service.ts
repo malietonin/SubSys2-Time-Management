@@ -39,6 +39,52 @@ export class AttendanceRecordService {
       data: record,
     };
   }
+  async listAttendanceForEmployee(
+  employeeId: string,
+  startDate?: string,
+  endDate?: string
+) {
+  //malak
+  const record = await this.attendanceModel.findOne({
+    employeeId: new Types.ObjectId(employeeId),
+  });
+
+  if (!record) {
+    return {
+      success: true,
+      message: 'No attendance punches found.',
+      data: [],
+    };
+  }
+
+  if (!startDate && !endDate) {
+    return {
+      success: true,
+      message: 'All attendance punches fetched.',
+      data: record.punches,
+    };
+  }
+
+  const start = startDate ? new Date(startDate) : null;
+  const end = endDate ? new Date(endDate) : null;
+
+  if (start) start.setHours(0, 0, 0, 0);
+  if (end) end.setHours(23, 59, 59, 999);
+
+  const filtered = record.punches.filter(p => {
+    const t = new Date(p.time).getTime();
+    if (start && end) return t >= start.getTime() && t <= end.getTime();
+    if (start) return t >= start.getTime();
+    if (end) return t <= end.getTime();
+    return true;
+  });
+
+  return {
+    success: true,
+    message: 'Attendance punches fetched for period.',
+    data: filtered,
+  };
+}
 
   async updateAttendanceRecord(id: string, dto: UpdateAttendanceRecordDto) {
     const record = await this.attendanceModel.findById(id);
@@ -168,14 +214,14 @@ async detectMissedPunches(employeeId: string) {
   return { success: true, data: { missed } };
 }
 
-async listAttendanceForEmployee(employeeId: string) {
+/* malak async listAttendanceForEmployee(employeeId: string) {
   const record = await this.attendanceModel.findOne({
     employeeId: new Types.ObjectId(employeeId),
   });
   if (!record) throw new NotFoundException('Attendance record not found');
 
   return { success: true, data: record.punches };
-}
+}*/
 
 async updatePunchByTime(
   employeeId: string,

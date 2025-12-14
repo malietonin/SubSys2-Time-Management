@@ -210,7 +210,7 @@ export class TimeManagementController {
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string
     ) {
-        return this.attendanceRecordService.listAttendanceForEmployee(employeeId)/*, startDate, endDate); malak */
+        return this.attendanceRecordService.listAttendanceForEmployee(employeeId, startDate, endDate); 
     }
 
     @UseGuards(AuthGuard)
