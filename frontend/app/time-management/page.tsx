@@ -68,11 +68,13 @@ export default function TimeManagementPage() {
             )}
 
             {/* Attendance */}
+          <Link href={'time-management/attendance'}>
             <DashboardCard
               title="Attendance"
               description="Review your attendance history and patterns"
               icon="🗓️"
             />
+            </Link>
 
             
             {/* Rules */}
