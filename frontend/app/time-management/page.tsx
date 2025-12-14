@@ -105,6 +105,15 @@ export default function TimeManagementPage() {
                 icon="🔔"
               />            
             </Link>
+            {/* Time Exceptions */}
+         <Link href="/time-management/time-exceptions">
+            <DashboardCard
+                title="Time Exceptions"
+                description="Submit and review time exception requests (late, early leave, permissions)"
+                icon="⏰"
+                />
+              </Link>
+
 
 
             {/* Reports - only for payroll and hr */}
@@ -126,6 +135,7 @@ export default function TimeManagementPage() {
       icon="⚙️"
     />
   </Link>
+      
 )}
 
           </div>
