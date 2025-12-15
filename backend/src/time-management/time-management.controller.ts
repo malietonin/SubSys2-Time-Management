@@ -366,6 +366,15 @@ export class TimeManagementController {
             data: result
         };
     }
+    
+    @UseGuards(AuthGuard)
+    @Get('attendance-correction-request')
+    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_ADMIN, SystemRole.SYSTEM_ADMIN)
+    async getAllCorrectionRequests() {
+    return this.attendanceCorrectionRequestService.getAllCorrectionRequests();
+    }
+
+
 
     // Holiday Functions
     @UseGuards(AuthGuard)

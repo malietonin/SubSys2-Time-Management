@@ -1,6 +1,3 @@
-// employees can submit correction requests for their attendance records
-// department heads or hr admins can approve/reject correction requests for their teams
-// department heads or hr admins can escalate unresolved requests to higher management
 "use client";
 
 import { useEffect, useState } from "react";
@@ -32,14 +29,18 @@ export default function AttendanceCorrectionRequestPage() {
 
   const { user } = useAuth();
 
-  // Check user roles
-  const isEmployee = user?.roles?.some((role: string) =>
-    ["HR Employee", "Department Employee"].includes(role)
-  );
+  // Check user roles - be more flexible with role matching
+  const isEmployee = user?.roles?.some((role: string) => {
+    const normalizedRole = role.toLowerCase().trim();
+    return normalizedRole.includes('employee') || normalizedRole === 'hr employee' || normalizedRole === 'department employee';
+  });
 
-  const canApproveReject = user?.roles?.some((role: string) =>
-    ["Department Head", "HR Admin", "System Admin"].includes(role)
-  );
+  const canApproveReject = user?.roles?.some((role: string) => {
+    const normalizedRole = role.toLowerCase().trim();
+    return normalizedRole.includes('department head') || 
+           normalizedRole.includes('hr admin') || 
+           normalizedRole.includes('system admin');
+  });
 
   const canViewAll = canApproveReject;
 
@@ -49,25 +50,24 @@ export default function AttendanceCorrectionRequestPage() {
     
     setLoading(true);
     try {
-      let url = "";
-      
-      if (canViewAll) {
-        // Managers/Admins see all requests (we'll need a new endpoint)
-        // For now, we'll use the employee endpoint
-        url = `http://localhost:4000/time-management/attendance-correction-request/employee/${user.userid}`;
-      } else {
-        // Employees see only their requests
-        url = `http://localhost:4000/time-management/attendance-correction-request/employee/${user.userid}`;
-      }
+      // Employees see only their requests
+      const url = `http://localhost:4000/time-management/attendance-correction-request/employee/${user.userid}`;
 
       const res = await axios.get(url, { withCredentials: true });
-      const data = res.data.data || res.data || [];
       
-      const processedRequests = data.map((req: any) => ({
+      // Handle both response formats
+      let data = res.data.data || res.data || [];
+      
+      // If data is wrapped in success/message/data format
+      if (!Array.isArray(data) && data.data) {
+        data = data.data;
+      }
+      
+      const processedRequests = Array.isArray(data) ? data.map((req: any) => ({
         ...req,
         createdAt: new Date(req.createdAt),
         updatedAt: new Date(req.updatedAt),
-      }));
+      })) : [];
 
       setRequests(processedRequests);
     } catch (err) {
@@ -115,19 +115,20 @@ export default function AttendanceCorrectionRequestPage() {
     }
   };
 
-  const handleDelete = async (requestId: string) => {
-    if (!confirm("Are you sure you want to delete this request?")) return;
+  const handleEscalate = async () => {
+    if (!confirm("This will escalate all pending requests older than 48 hours. Continue?")) return;
 
     try {
-      // Note: You'll need to add a delete endpoint in your backend
-      await axios.delete(
-        `http://localhost:4000/time-management/attendance-correction-request/${requestId}`,
+      await axios.post(
+        `http://localhost:4000/time-management/attendance-correction-request/auto-escalate`,
+        {},
         { withCredentials: true }
       );
+      alert("Pending requests escalated successfully!");
       fetchRequests();
     } catch (err) {
-      console.error("Error deleting request:", err);
-      alert("Failed to delete request");
+      console.error("Error escalating requests:", err);
+      alert("Failed to escalate requests");
     }
   };
 
@@ -203,14 +204,25 @@ export default function AttendanceCorrectionRequestPage() {
               </p>
             </div>
 
-            {isEmployee && (
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md"
-              >
-                ➕ Submit Request
-              </button>
-            )}
+            <div className="flex space-x-2">
+              {isEmployee && (
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md"
+                >
+                  ➕ Submit Request
+                </button>
+              )}
+              
+              {canApproveReject && (
+                <button
+                  onClick={handleEscalate}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition shadow-md"
+                >
+                  ⚠️ Auto-Escalate
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -236,7 +248,7 @@ export default function AttendanceCorrectionRequestPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
             <div className="text-sm text-gray-500 dark:text-gray-400">Total</div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{requests.length}</div>
@@ -314,14 +326,21 @@ export default function AttendanceCorrectionRequestPage() {
                     </div>
 
                     <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                      <span>📅 Created: {request.createdAt.toLocaleString()}</span>
-                      <span>🔄 Updated: {request.updatedAt.toLocaleString()}</span>
-                      <span>🆔 Record: {request.attendanceRecord}</span>
+                    
+              
+                    
+
+
                     </div>
                   </div>
 
                   <div className="flex space-x-2 ml-4">
-                    {canApproveReject && (request.status === "SUBMITTED" || request.status === "IN_REVIEW") && (
+                    {/* Managers can approve/reject SUBMITTED, IN_REVIEW, or ESCALATED requests */}
+                    {canApproveReject && (
+                      request.status === "SUBMITTED" || 
+                      request.status === "IN_REVIEW" || 
+                      request.status === "ESCALATED"
+                    ) && (
                       <>
                         <button
                           onClick={() => handleApprove(request._id)}
@@ -338,21 +357,17 @@ export default function AttendanceCorrectionRequestPage() {
                       </>
                     )}
                     
-                    {isEmployee && (request.status === "SUBMITTED" || request.status === "IN_REVIEW") && (
+                    {/* Employees can edit SUBMITTED, IN_REVIEW, or ESCALATED requests */}
+                    {isEmployee && (
+                      request.status === "SUBMITTED" || 
+                      request.status === "IN_REVIEW" || 
+                      request.status === "ESCALATED"
+                    ) && (
                       <button
                         onClick={() => setSelectedRequest(request)}
                         className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition shadow-md text-sm font-medium"
                       >
                         ✏️ Edit
-                      </button>
-                    )}
-
-                    {(request.status === "REJECTED" || request.status === "APPROVED") && (
-                      <button
-                        onClick={() => handleDelete(request._id)}
-                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition shadow-md text-sm font-medium"
-                      >
-                        🗑️ Delete
                       </button>
                     )}
                   </div>
@@ -405,7 +420,7 @@ function CorrectionRequestModal({
 
     try {
       if (request) {
-        // Update existing request
+        // Update existing request (only reason can be updated)
         await axios.patch(
           `http://localhost:4000/time-management/attendance-correction-request/${request._id}`,
           { reason },
@@ -424,9 +439,10 @@ function CorrectionRequestModal({
         );
       }
       onSuccess();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error saving request:", err);
-      alert("Failed to save request. Please try again.");
+      const errorMsg = err.response?.data?.message || "Failed to save request. Please try again.";
+      alert(errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -443,7 +459,7 @@ function CorrectionRequestModal({
         
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           {request 
-            ? "Update your correction request details"
+            ? "Update the reason for your correction request"
             : "Submit a request to correct your attendance record"}
         </p>
 
@@ -462,7 +478,7 @@ function CorrectionRequestModal({
                 placeholder="Enter attendance record ID"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Find this in your attendance records
+                Find this in your attendance records page
               </p>
             </div>
           )}
@@ -487,7 +503,7 @@ function CorrectionRequestModal({
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
             <p className="text-xs text-blue-800 dark:text-blue-200">
               <strong>Note:</strong> Your request will be reviewed by your line manager or HR admin. 
-              You'll be notified once a decision is made.
+              Requests older than 48 hours may be auto-escalated.
             </p>
           </div>
 
