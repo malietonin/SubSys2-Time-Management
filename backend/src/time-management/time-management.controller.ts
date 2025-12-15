@@ -1,5 +1,5 @@
 import { NotificationLogService } from './services/notification-log.service';
-import { Controller, Post, Body, Delete, Param, Get, Put, Patch, BadRequestException, Query, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Delete, Param, Get, Put, Patch, BadRequestException, Query, UseGuards, Req } from '@nestjs/common';
 import { ShiftAssignmentService } from './services/shift-assignment.service';
 import { ScheduleRuleService } from './services/schedule-rule.service';
 import { AttendanceCorrectionRequestService } from './services/attendance-correction-request.service';
@@ -474,28 +474,51 @@ export class TimeManagementController {
 
     // Time Exception Functions
    @UseGuards(AuthGuard)
-   @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_ADMIN)
+   @Roles(SystemRole.DEPARTMENT_EMPLOYEE, SystemRole.HR_EMPLOYEE)
    @Post('time-exception') // line manager, hr admin
-   async createTimeException(@Body() dto: TimeExceptionCreateDto) {
-       return this.timeExceptionService.create(dto);
+   async createTimeException(@Body() dto: TimeExceptionCreateDto, @Req() req) {
+       // It's more secure to use the authenticated user's ID from the request
+       const employeeId = req.user.id;
+       // We remove the employeeId from the DTO to prevent users from submitting on behalf of others
+       const { employeeId: _, ...createData } = dto;
+       return this.timeExceptionService.create({ ...createData, employeeId });
    }
 
+  
+
    @UseGuards(AuthGuard)
-   @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_ADMIN)
+   @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_ADMIN, SystemRole.SYSTEM_ADMIN)
    @Patch('time-exception/:id/approve') // line manager, hr admin
-    async approveTimeException(@Param('id') id: string, @Body('approvedBy') approvedBy: string) {
-        return this.timeExceptionService.approve(id, approvedBy);
+    async approveTimeException(@Param('id') id: string, @Req() req) {
+        const approverId = req.user.id;
+        return this.timeExceptionService.approve(id, approverId);
     }
 
     @UseGuards(AuthGuard)
-    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_ADMIN)
+    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_ADMIN, SystemRole.SYSTEM_ADMIN)
     @Patch('time-exception/:id/reject') // line manager, hr admin
-    async rejectTimeException(@Param('id') id: string, @Body('rejectedBy') rejectedBy: string, @Body('reason') reason: string) {
-        return this.timeExceptionService.reject(id, rejectedBy, reason);
+    async rejectTimeException(@Param('id') id: string, @Body('reason') reason: string, @Req() req) {
+        const approverId = req.user.id;
+        return this.timeExceptionService.reject(id, approverId, reason);
     }
 
     @UseGuards(AuthGuard)
-    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_ADMIN)
+    @Roles(SystemRole.DEPARTMENT_EMPLOYEE, SystemRole.HR_EMPLOYEE)
+    @Get('time-exception/my-exceptions')
+    async listMyTimeExceptions(@Req() req) {
+        const employeeId = req.user.id;
+        return this.timeExceptionService.listEmployeeTimeExceptions(employeeId);
+    }
+
+    @UseGuards(AuthGuard)
+    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_ADMIN, SystemRole.SYSTEM_ADMIN)
+    @Get('time-exception')
+    async getAllTimeExceptions() {
+        return this.timeExceptionService.getAllTimeExceptions();
+    }
+
+    @UseGuards(AuthGuard)
+    @Roles(SystemRole.SYSTEM_ADMIN)
     @Post('time-exception/auto-escalate') // line manager, hr admin
     async autoEscalateTimeExceptions() {
         return this.timeExceptionService.autoEscalatePending();
