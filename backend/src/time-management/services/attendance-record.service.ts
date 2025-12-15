@@ -12,6 +12,8 @@ import { CreateAttendanceRecordDto } from '../dtos/attendance-record-dto';
 import { UpdateAttendanceRecordDto } from '../dtos/update-attendance-record-dto';
 import { Holiday, HolidayDocument } from '../models/holiday.schema';
 import { HolidayService } from './holiday.service';
+import { Shift, ShiftDocument } from '../models/shift.schema';
+import { LeavesService } from '../../leaves/leaves.service';
 
 @Injectable()
 export class AttendanceRecordService {
@@ -23,8 +25,11 @@ export class AttendanceRecordService {
     private scheduleRuleModel: Model<ScheduleRuleDocument>,
     @InjectModel(ShiftAssignment.name)
     private shiftAssignmentModel: Model<ShiftAssignmentDocument>,
+    @InjectModel(Shift.name)
+    private shiftModel: Model<ShiftDocument>,
     private latenessRuleService: LatenessRuleService,
-    private holidayService: HolidayService
+    private holidayService: HolidayService,
+    private leavesService: LeavesService // Added LeavesService dependency
   ) {}
 
   async createAttendanceRecord(dto: CreateAttendanceRecordDto) {
@@ -240,6 +245,34 @@ export class AttendanceRecordService {
     
     if (!record) {
       throw new NotFoundException('No attendance record found.');
+    const record = await this.attendanceModel.findOne({ employeeId: new Types.ObjectId(employeeId) });
+    if (!record) throw new NotFoundException('No attendance record found.');
+
+    // Check if today is a holiday
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isHoliday = await this.holidayService.getAllHolidays().then(holidays =>
+      holidays.data.some(holiday => {
+        const holidayDate = new Date(holiday.startDate);
+        return holidayDate.setHours(0, 0, 0, 0) === today.getTime();
+      })
+    );
+
+    if (isHoliday) {
+      return { success: true, message: 'Today is a holiday. No missed punches flagged.', data: record };
+    }
+
+    // Check if the employee is on leave
+    const isOnLeave = await this.leavesService.getAllLeaveRequests().then(leaves =>
+      leaves.some(leave => {
+        const leaveStart = new Date(leave.dates.from).setHours(0, 0, 0, 0);
+        const leaveEnd = new Date(leave.dates.to).setHours(0, 0, 0, 0);
+        return leave.employeeId.toString() === employeeId && today.getTime() >= leaveStart && today.getTime() <= leaveEnd;
+      })
+    );
+
+    if (isOnLeave) {
+      return { success: true, message: 'Employee is on leave. No missed punches flagged.', data: record };
     }
 
     record.hasMissedPunch = record.punches.some((p, i, arr) => {
@@ -283,10 +316,34 @@ export class AttendanceRecordService {
 
     // If no date filters, return all punches
     if (!startDate && !endDate) {
+  
+    
+    let start: Date | null = null;
+    if (startDate) {
+      start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+    }
+
+    let end: Date | null = null;
+    if (endDate) {
+      end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+    }
+
+    const punchesWithShifts = await Promise.all(record.punches.map(async (punch) => {
+      const punchTime = new Date(punch.time);
+      const punchDate = new Date(punchTime);
+      punchDate.setHours(0, 0, 0, 0);
+
+      const shiftAssignment = await this.shiftAssignmentModel.findOne({
+        employeeId: new Types.ObjectId(employeeId),
+        date: punchDate,
+      }).populate('shiftId');
+
       return {
-        success: true,
-        message: 'All attendance punches fetched.',
-        data: record.punches
+        time: punch.time,
+        type: punch.type,
+        shiftName: shiftAssignment && shiftAssignment.shiftId ? (shiftAssignment.shiftId as any).name : 'N/A',
       };
     }
 
@@ -313,11 +370,18 @@ export class AttendanceRecordService {
       }
 
       return true;
+    }));
+
+    const filtered = punchesWithShifts.filter(p => {
+      const punchTime = new Date(p.time);
+      const isAfterStart = !start || punchTime.getTime() >= start.getTime();
+      const isBeforeEnd = !end || punchTime.getTime() <= end.getTime();
+      return isAfterStart && isBeforeEnd;
     });
 
     return {
       success: true,
-      message: 'Attendance punches fetched for the specified period.',
+      message: 'Attendance punches fetched.',
       data: filtered
     };
   }
