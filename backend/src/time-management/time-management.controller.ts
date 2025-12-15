@@ -34,6 +34,7 @@ import { UpdateAttendanceRecordDto } from './dtos/update-attendance-record-dto';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { SystemRole } from 'src/employee-profile/enums/employee-profile.enums';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
 
 @Controller('time-management')
 export class TimeManagementController {
@@ -186,7 +187,15 @@ export class TimeManagementController {
     }
 
     // Attendance Record Functions
-
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_MANAGER, SystemRole.SYSTEM_ADMIN)
+    @Get('attendance-record') // Get all records with filters
+    async getAllAttendanceRecords(
+    @Query('employeeId') employeeId?: string
+    ) {
+    return this.attendanceRecordService.getAllAttendanceRecords(employeeId);
+    }
+    
     @UseGuards(AuthGuard)
     @Roles(SystemRole.HR_EMPLOYEE, SystemRole.DEPARTMENT_EMPLOYEE)
     @Post('attendance-record/clock-in') // employee
@@ -205,18 +214,16 @@ export class TimeManagementController {
     @UseGuards(AuthGuard)
     @Get('attendance-record/:employeeId/missed-punches') // employee, line manager, payroll officer
     async detectMissedPunches(@Param('employeeId') employeeId: string) {
-        return this.attendanceRecordService.detectMissedPunches(employeeId);
+       return this.attendanceRecordService.detectMissedPunches(employeeId);
     }
 
     @UseGuards(AuthGuard)
     @Roles(SystemRole.HR_EMPLOYEE, SystemRole.DEPARTMENT_EMPLOYEE, SystemRole.DEPARTMENT_HEAD, SystemRole.PAYROLL_MANAGER, SystemRole.PAYROLL_SPECIALIST, SystemRole.SYSTEM_ADMIN)
     @Get('attendance-record/:employeeId') // employee, line manager, payroll officer, sys admin
     async listAttendanceForEmployee(
-        @Param('employeeId') employeeId: string,
-        @Query('startDate') startDate?: string,
-        @Query('endDate') endDate?: string
+        @Param('employeeId') employeeId: string
     ) {
-        return this.attendanceRecordService.listAttendanceForEmployee(employeeId, startDate, endDate);
+        return this.attendanceRecordService.listAttendanceForEmployee(employeeId); 
     }
 
     @UseGuards(AuthGuard)
@@ -268,19 +275,9 @@ export class TimeManagementController {
     @Roles(SystemRole.HR_MANAGER)
     @Get('attendance-record/:employeeId/repeated-lateness') // hr manager
     async flagRepeatedLateness(@Param('employeeId') employeeId: string) {
-        return this.attendanceRecordService.flagRepeatedLateness(employeeId);
+       //malak deleted this ->> return this.attendanceRecordService.flagRepeatedLateness(employeeId);
     }
 
-    @UseGuards(AuthGuard)
-    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_MANAGER, SystemRole.SYSTEM_ADMIN)
-    @Get('attendance-record') // Get all records with filters
-    async getAllAttendanceRecords(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-    @Query('employeeId') employeeId?: string
-    ) {
-    return this.attendanceRecordService.getAllAttendanceRecords(startDate, endDate, employeeId);
-    }
 
     @UseGuards(AuthGuard)
     @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_MANAGER, SystemRole.SYSTEM_ADMIN)

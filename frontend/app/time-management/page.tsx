@@ -1,14 +1,12 @@
-"use client";
+ "use client";
 
 import { useAuth } from "@/app/(system)/context/authContext";
 import Link from "next/link";
+import ClockInOut from "./clock-in-out/ClockInOut";
+
 
 export default function TimeManagementPage() {
-  const { user, logout } = useAuth();
-
-  const handleLogout = async () => {
-    await logout();
-  };
+  const { user } = useAuth();
 
   if (!user) {
     return (
@@ -27,14 +25,8 @@ export default function TimeManagementPage() {
     ['hr admin', 'system admin', 'manager', 'payroll manager', 'payroll specialist'].includes(role.toLowerCase())
   );
 
-  const isEmployee = user?.roles?.some(role =>
-    ['hr employee', 'department employee'].includes(role.toLowerCase())
-  );
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Navigation Bar */}
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
@@ -48,63 +40,69 @@ export default function TimeManagementPage() {
             Time Management
           </h2>
 
+          {/* Clock In/Out Component */}
+          <div className="mb-8">
+            <ClockInOut />
+          </div>
+
+          {/* Dashboard Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* My Timesheet */}
             <Link href={'/time-management/timesheet'}>
-            <DashboardCard
-              title="My Timesheet"
-              description="View and manage your weekly timesheets"
-              icon="🗒️"
-            />
-            </Link>
-
-            {/* Clock In/Out - only for employees */}
-            {isEmployee && (
               <DashboardCard
-                title="Clock In / Out"
-                description="Record your start and end work times"
-                icon="⏱️"
+                title="My Timesheet"
+                description="View and manage your weekly timesheets"
+                icon="🗒️"
               />
-            )}
+            </Link>
 
             {/* Attendance */}
-          <Link href={'time-management/attendance'}>
-            <DashboardCard
-              title="Attendance"
-              description="Review your attendance history and patterns"
-              icon="🗓️"
-            />
+            <Link href={'/time-management/attendance'}>
+              <DashboardCard
+                title="Attendance"
+                description="Review your attendance history and patterns"
+                icon="🗓️"
+              />
             </Link>
 
-            
-            {/* Rules */}
-            {isManagerOrAdmin && (
-          <Link href={'time-management/rules'}>  
-            <DashboardCard
-              title="Rules"
-              description="View company time management policies"
-              icon="📜"
-            />
+            {/* Time Exceptions */}
+            <Link href="/time-management/time-exceptions">
+              <DashboardCard
+                title="Time Exceptions"
+                description="Submit and review time exception requests (late, early leave, permissions)"
+                icon="⏰"
+              />
             </Link>
-            )}
 
             {/* Notifications */}
-            <Link href={'time-management/notifications'}>
+            <Link href={'/time-management/notifications'}>
               <DashboardCard
                 title="Notifications"
                 description="Manage your notifications"
                 icon="🔔"
-              />            
+              />
             </Link>
 
+            {/* Rules - only for managers/admins */}
+            {isManagerOrAdmin && (
+              <Link href={'/time-management/rules'}>
+                <DashboardCard
+                  title="Rules"
+                  description="Manage lateness, overtime, schedule & exceptions"
+                  icon="⚙️"
+                />
+              </Link>
+            )}
 
             {/* Reports - only for payroll and hr */}
             {isManagerOrAdminOrPayroll && (
-              <DashboardCard
-                title="Reports"
-                description="Generate and view time management reports"
-                icon="📊"
-              />
+              <Link href={'/time-management/reports'}>
+                <DashboardCard
+                  title="Reports"
+                  description="Generate and view time management reports"
+                  icon="📊"
+                />
+              </Link>
             )}
           </div>
         </div>
@@ -112,7 +110,10 @@ export default function TimeManagementPage() {
     </div>
   );
 }
+  
+ 
 
+ 
 function DashboardCard({ title, description, icon }: { title: string; description: string; icon: string; }) {
   return (
     <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 hover:shadow-lg transition cursor-pointer">
