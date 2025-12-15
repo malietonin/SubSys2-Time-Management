@@ -93,6 +93,12 @@ export class TimeManagementController {
         return await this.shiftAssignmentService.extendShiftAssignment(dto,shiftAssignmentId)
     }
 
+    @UseGuards(AuthGuard)
+    @Get('shift-assignment/employee/:id')
+    async getEmployeeShift(@Param('id') employeeId: string){
+    return await this.shiftAssignmentService.getEmployeeShift(employeeId);
+    }
+
     // Notification Log Functions (kol da hr admin)
 
     @UseGuards(AuthGuard)
@@ -263,6 +269,31 @@ export class TimeManagementController {
     @Get('attendance-record/:employeeId/repeated-lateness') // hr manager
     async flagRepeatedLateness(@Param('employeeId') employeeId: string) {
        //malak deleted this ->> return this.attendanceRecordService.flagRepeatedLateness(employeeId);
+    }
+
+    @UseGuards(AuthGuard)
+    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_MANAGER, SystemRole.SYSTEM_ADMIN)
+    @Get('attendance-record') // Get all records with filters
+    async getAllAttendanceRecords(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('employeeId') employeeId?: string
+    ) {
+    return this.attendanceRecordService.getAllAttendanceRecords(startDate, endDate, employeeId);
+    }
+
+    @UseGuards(AuthGuard)
+    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_MANAGER, SystemRole.SYSTEM_ADMIN)
+    @Get('attendance-record/record/:id')
+    async getAttendanceRecordById(@Param('id') id: string) {
+    return this.attendanceRecordService.getAttendanceRecordById(id);
+    }
+
+    @UseGuards(AuthGuard)
+    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.SYSTEM_ADMIN)
+    @Delete('attendance-record/record/:id')
+    async deleteAttendanceRecord(@Param('id') id: string) {
+    return this.attendanceRecordService.deleteAttendanceRecord(id);
     }
 
     // Attendance Correction Request Functions

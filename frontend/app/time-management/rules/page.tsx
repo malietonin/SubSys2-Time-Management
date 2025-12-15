@@ -1,332 +1,889 @@
  "use client";
 
-import { useAuth } from "@/app/(system)/context/authContext";
-import { useRouter } from "next/navigation";
+"use client";
+
 import { useEffect, useState } from "react";
-import axiosInstance from "@/app/utils/ApiClient";
+import axios from "axios";
+import Link from "next/link";
+import { useAuth } from "@/app/(system)/context/authContext";
 
-// ----------------------------------
-// RULE SECTION CARD PROPS
-// ----------------------------------
-type RuleSectionProps = {
-  title: string;
-  type: "lateness" | "overtime" | "schedule" | "exception";
-  data: any[];
-};
-
-// ----------------------------------
-// MAIN PAGE COMPONENT
-// ----------------------------------
-export default function RulesPage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
-
-  if (loading) return <div className="p-6 text-white">Loading...</div>;
-
-   const allowed = ["hr admin", "system admin", "manager"];
-
-const hasAccess = user?.roles?.some(r =>
-  allowed.includes(r.toLowerCase())
-);
-
-if (!hasAccess) {
-  router.replace("/unauthorized");
-  return null;
+export interface ScheduleRule {
+  _id?: string;
+  name: string;
+  description?: string;
+  workingDaysPerWeek: number;
+  workingHoursPerDay: number;
+  startTime: string;
+  endTime: string;
+  breakDuration: number;
+  active?: boolean;
 }
 
- 
+export interface OvertimeRule {
+  _id?: string;
+  name: string;
+  description?: string;
+  type: "DAILY" | "WEEKLY" | "MONTHLY";
+  threshold: number;
+  rate: number;
+  active?: boolean;
+}
 
-  // ----------------------------------
-  // STATES
-  // ----------------------------------
-  const [latenessRules, setLatenessRules] = useState<any[]>([]);
-  const [overtimeRules, setOvertimeRules] = useState<any[]>([]);
-  const [scheduleRules, setScheduleRules] = useState<any[]>([]);
-  const [timeExceptions, setTimeExceptions] = useState<any[]>([]);
+export interface LatenessRule {
+  _id?: string;
+  name: string;
+  description?: string;
+  graceTime: number;
+  penaltyType: "DEDUCTION" | "WARNING" | "BOTH";
+  penaltyAmount?: number;
+  active?: boolean;
+}
 
-  // Modal state
-  const [openModal, setOpenModal] = useState(false);
+type RuleType = "schedule" | "overtime" | "lateness";
+
+export default function Rules() {
+  const [scheduleRules, setScheduleRules] = useState<ScheduleRule[]>([]);
+  const [overtimeRules, setOvertimeRules] = useState<OvertimeRule[]>([]);
+  const [latenessRules, setLatenessRules] = useState<LatenessRule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<RuleType>("schedule");
+  const [showForm, setShowForm] = useState(false);
   const [editingRule, setEditingRule] = useState<any>(null);
-  const [modalType, setModalType] = useState<string>("");
 
-  // Form data
-  const [form, setForm] = useState<any>({});
+  const [newScheduleRule, setNewScheduleRule] = useState<ScheduleRule>({
+    name: "",
+    description: "",
+    workingDaysPerWeek: 5,
+    workingHoursPerDay: 8,
+    startTime: "09:00",
+    endTime: "17:00",
+    breakDuration: 60,
+    active: true,
+  });
 
-  // ----------------------------------
-  // LOAD ALL RULES
-  // ----------------------------------
-  const fetchAll = async () => {
+  const [newOvertimeRule, setNewOvertimeRule] = useState<OvertimeRule>({
+    name: "",
+    description: "",
+    type: "DAILY",
+    threshold: 8,
+    rate: 1.5,
+    active: true,
+  });
+
+  const [newLatenessRule, setNewLatenessRule] = useState<LatenessRule>({
+    name: "",
+    description: "",
+    graceTime: 15,
+    penaltyType: "WARNING",
+    penaltyAmount: 0,
+    active: true,
+  });
+
+  const { user } = useAuth();
+
+  // Fetch all rules
+  const fetchScheduleRules = async () => {
     try {
-      const late = await axiosInstance.get("/time-management/lateness-rules");
-      const over = await axiosInstance.get("/time-management/overtime-rules");
-      const sched = await axiosInstance.get("/time-management/schedule-rules");
-      const ex = await axiosInstance.get("/time-exception");
-
-      setLatenessRules(late.data.data);
-      setOvertimeRules(over.data.data);
-      setScheduleRules(sched.data.data);
-      setTimeExceptions(ex.data.data);
+      const res = await axios.get(
+        "http://localhost:4000/time-management/schedule-rule",
+        { withCredentials: true }
+      );
+      setScheduleRules(res.data.data || []);
     } catch (err) {
-      console.log("Error fetching rules:", err);
+      console.log("Error fetching schedule rules:", err);
     }
+  };
+
+  const fetchOvertimeRules = async () => {
+    try {
+      // Note: No GET endpoint in controller, so we'll skip this for now
+      setOvertimeRules([]);
+    } catch (err) {
+      console.log("Error fetching overtime rules:", err);
+    }
+  };
+
+  const fetchLatenessRules = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:4000/time-management/lateness-rule",
+        { withCredentials: true }
+      );
+      setLatenessRules(res.data || []);
+    } catch (err) {
+      console.log("Error fetching lateness rules:", err);
+    }
+  };
+
+  const fetchAllRules = async () => {
+    setLoading(true);
+    await Promise.all([
+      fetchScheduleRules(),
+      fetchOvertimeRules(),
+      fetchLatenessRules(),
+    ]);
+    setLoading(false);
   };
 
   useEffect(() => {
-    fetchAll();
+    fetchAllRules();
   }, []);
 
-  // ----------------------------------
-  // DELETE RULE
-  // ----------------------------------
-  const deleteRule = async (type: string, id: string) => {
-    const endpoints: Record<string, string> = {
-      lateness: `/time-management/lateness-rules/${id}`,
-      overtime: `/time-management/overtime-rules/${id}`,
-      schedule: `/time-management/schedule-rules/${id}`,
-      exception: `/time-exception/${id}`,
-    };
+  // Authorization checks
+  const canCreateScheduleRule = user?.roles?.some((role: string) =>
+    ["HR Admin"].includes(role)
+  );
 
-    try {
-      await axiosInstance.delete(endpoints[type]);
-      alert("Deleted successfully");
-      fetchAll();
-    } catch (err) {
-      console.log("Delete error:", err);
-      alert("Failed to delete rule");
-    }
-  };
+  const canEditScheduleRule = user?.roles?.some((role: string) =>
+    ["HR Manager"].includes(role)
+  );
 
-  // ----------------------------------
-  // OPEN CREATE / EDIT FORMS
-  // ----------------------------------
-  const openCreateForm = (type: string) => {
-    setModalType(type);
-    setEditingRule(null);
-    setForm({});
-    setOpenModal(true);
-  };
+  const canManageOvertimeRules = user?.roles?.some((role: string) =>
+    ["HR Manager"].includes(role)
+  );
 
-  const openEditForm = (type: string, rule: any) => {
-    setModalType(type);
-    setEditingRule(rule);
-    setForm(rule);
-    setOpenModal(true);
-  };
+  const canManageLatenessRules = user?.roles?.some((role: string) =>
+    ["HR Manager"].includes(role)
+  );
 
-  // ----------------------------------
-  // SUBMIT FORM (CREATE / UPDATE)
-  // ----------------------------------
-  const handleSubmit = async () => {
-    const createEndpoints: Record<string, string> = {
-      lateness: "/time-management/lateness-rules",
-      overtime: "/time-management/overtime-rules",
-      schedule: "/time-management/schedule-rules",
-    };
-
-    const updateEndpoints: Record<string, string> = {
-      lateness: `/time-management/lateness-rules/${editingRule?._id}`,
-      overtime: `/time-management/overtime-rules/${editingRule?._id}`,
-      schedule: `/time-management/schedule-rules/${editingRule?._id}`,
-    };
-
+  // Submit handlers
+  const submitScheduleRule = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       if (editingRule) {
-        await axiosInstance.patch(updateEndpoints[modalType], form);
+        await axios.patch(
+          `http://localhost:4000/time-management/schedule-rule/${editingRule._id}`,
+          newScheduleRule,
+          { withCredentials: true }
+        );
       } else {
-        await axiosInstance.post(createEndpoints[modalType], form);
+        await axios.post(
+          "http://localhost:4000/time-management/schedule-rule",
+          newScheduleRule,
+          { withCredentials: true }
+        );
       }
-
-      setOpenModal(false);
-      fetchAll();
+      fetchScheduleRules();
+      resetForm();
     } catch (err) {
-      console.log("Save error:", err);
-      alert("Failed to save rule");
+      console.error("Error saving schedule rule:", err);
     }
   };
 
-  // ----------------------------------
-  // FORM UI (depends on rule type)
-  // ----------------------------------
-  const renderFormFields = () => {
-    switch (modalType) {
-      case "lateness":
-        return (
-          <>
-            <label>Name</label>
-            <input
-              className="text-black p-2 rounded"
-              value={form.name || ""}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-
-            <label>Description</label>
-            <input
-              className="text-black p-2 rounded"
-              value={form.description || ""}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
-
-            <label>Grace Period (minutes)</label>
-            <input
-              className="text-black p-2 rounded"
-              type="number"
-              value={form.gracePeriodMinutes || ""}
-              onChange={(e) =>
-                setForm({ ...form, gracePeriodMinutes: +e.target.value })
-              }
-            />
-
-            <label>Deduction per minute</label>
-            <input
-              className="text-black p-2 rounded"
-              type="number"
-              value={form.deductionForEachMinute || ""}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  deductionForEachMinute: +e.target.value,
-                })
-              }
-            />
-          </>
+  const submitOvertimeRule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingRule) {
+        await axios.patch(
+          `http://localhost:4000/time-management/overtime-rule/${editingRule._id}`,
+          newOvertimeRule,
+          { withCredentials: true }
         );
-
-      case "overtime":
-        return (
-          <>
-            <label>Name</label>
-            <input
-              className="text-black p-2 rounded"
-              value={form.name || ""}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-
-            <label>Description</label>
-            <input
-              className="text-black p-2 rounded"
-              value={form.description || ""}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
-          </>
+      } else {
+        await axios.post(
+          "http://localhost:4000/time-management/overtime-rule",
+          newOvertimeRule,
+          { withCredentials: true }
         );
-
-      case "schedule":
-        return (
-          <>
-            <label>Name</label>
-            <input
-              className="text-black p-2 rounded"
-              value={form.name || ""}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-
-            <label>Pattern</label>
-            <input
-              className="text-black p-2 rounded"
-              value={form.pattern || ""}
-              onChange={(e) => setForm({ ...form, pattern: e.target.value })}
-            />
-          </>
-        );
-
-      default:
-        return <p>No fields for exception rules.</p>;
+      }
+      fetchOvertimeRules();
+      resetForm();
+    } catch (err) {
+      console.error("Error saving overtime rule:", err);
     }
   };
 
-  // ----------------------------------
-  // RULE SECTION CARD
-  // ----------------------------------
-  const RuleSection = ({ title, type, data }: RuleSectionProps) => (
-    <div className="border rounded-lg p-6 bg-gray-900 text-white shadow-lg mb-8">
-      <h2 className="text-2xl font-bold mb-4">{title}</h2>
+  const submitLatenessRule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingRule) {
+        await axios.patch(
+          `http://localhost:4000/time-management/lateness-rule/${editingRule._id}`,
+          newLatenessRule,
+          { withCredentials: true }
+        );
+      } else {
+        await axios.post(
+          "http://localhost:4000/time-management/lateness-rule",
+          newLatenessRule,
+          { withCredentials: true }
+        );
+      }
+      fetchLatenessRules();
+      resetForm();
+    } catch (err) {
+      console.error("Error saving lateness rule:", err);
+    }
+  };
 
-      {type !== "exception" && (
-        <button
-          className="mb-4 px-4 py-2 bg-green-600 rounded hover:bg-green-700"
-          onClick={() => openCreateForm(type)}
-        >
-          + Create New Rule
-        </button>
-      )}
+  // Delete handlers
+  const deleteScheduleRule = async (id: string) => {
+    if (confirm("Are you sure you want to delete this schedule rule?")) {
+      try {
+        await axios.delete(
+          `http://localhost:4000/time-management/schedule-rule/${id}`,
+          { withCredentials: true }
+        );
+        fetchScheduleRules();
+      } catch (err) {
+        console.error("Error deleting schedule rule:", err);
+      }
+    }
+  };
 
-      {data.length === 0 ? (
-        <p className="text-gray-400">No rules found.</p>
-      ) : (
-        <ul className="space-y-4">
-          {data.map((rule: any) => (
-            <li
-              key={rule._id}
-              className="flex justify-between items-center p-4 border rounded bg-gray-800"
-            >
-              <div>
-                <p className="font-bold">{rule.name ?? "Rule"}</p>
-                <p className="text-gray-400 text-sm">{rule.description ?? ""}</p>
-              </div>
+  const deleteOvertimeRule = async (id: string) => {
+    if (confirm("Are you sure you want to delete this overtime rule?")) {
+      try {
+        await axios.delete(
+          `http://localhost:4000/time-management/overtime-rule/${id}`,
+          { withCredentials: true }
+        );
+        fetchOvertimeRules();
+      } catch (err) {
+        console.error("Error deleting overtime rule:", err);
+      }
+    }
+  };
 
-              <div className="flex gap-4">
-                {type !== "exception" && (
-                  <button
-                    className="px-3 py-1 bg-blue-600 rounded hover:bg-blue-700"
-                    onClick={() => openEditForm(type, rule)}
-                  >
-                    Edit
-                  </button>
-                )}
+  const deleteLatenessRule = async (id: string) => {
+    if (confirm("Are you sure you want to delete this lateness rule?")) {
+      try {
+        await axios.delete(
+          `http://localhost:4000/time-management/lateness-rule/${id}`,
+          { withCredentials: true }
+        );
+        fetchLatenessRules();
+      } catch (err) {
+        console.error("Error deleting lateness rule:", err);
+      }
+    }
+  };
 
-                <button
-                  className="px-3 py-1 bg-red-600 rounded hover:bg-red-700"
-                  onClick={() => deleteRule(type, rule._id)}
-                >
-                  Delete
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
+  const resetForm = () => {
+    setShowForm(false);
+    setEditingRule(null);
+    setNewScheduleRule({
+      name: "",
+      description: "",
+      workingDaysPerWeek: 5,
+      workingHoursPerDay: 8,
+      startTime: "09:00",
+      endTime: "17:00",
+      breakDuration: 60,
+      active: true,
+    });
+    setNewOvertimeRule({
+      name: "",
+      description: "",
+      type: "DAILY",
+      threshold: 8,
+      rate: 1.5,
+      active: true,
+    });
+    setNewLatenessRule({
+      name: "",
+      description: "",
+      graceTime: 15,
+      penaltyType: "WARNING",
+      penaltyAmount: 0,
+      active: true,
+    });
+  };
 
-  // ----------------------------------
-  // PAGE UI
-  // ----------------------------------
+  const editRule = (rule: any, type: RuleType) => {
+    setEditingRule(rule);
+    setActiveTab(type);
+    if (type === "schedule") setNewScheduleRule(rule);
+    if (type === "overtime") setNewOvertimeRule(rule);
+    if (type === "lateness") setNewLatenessRule(rule);
+    setShowForm(true);
+  };
+
+  const canAddRule = () => {
+    if (activeTab === "schedule") return canCreateScheduleRule;
+    if (activeTab === "overtime") return canManageOvertimeRules;
+    if (activeTab === "lateness") return canManageLatenessRules;
+    return false;
+  };
+
+  const canEditRule = () => {
+    if (activeTab === "schedule") return canEditScheduleRule;
+    if (activeTab === "overtime") return canManageOvertimeRules;
+    if (activeTab === "lateness") return canManageLatenessRules;
+    return false;
+  };
+
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <p className="text-gray-600 dark:text-gray-400">Loading rules...</p>
+      </div>
+    );
+
   return (
-    <div className="text-white p-8 space-y-8">
-      <h1 className="text-4xl font-bold mb-8">Time Management Rules</h1>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-6">
+      {/* Back button & Add Rule */}
+      <div className="mb-4 w-full max-w-6xl flex justify-between items-center">
+        <Link
+          href="/time-management/timesheet"
+          className="text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          &larr; Back to Dashboard
+        </Link>
 
-      <RuleSection title="Lateness Rules" type="lateness" data={latenessRules} />
-      <RuleSection title="Overtime Rules" type="overtime" data={overtimeRules} />
-      <RuleSection title="Schedule Rules" type="schedule" data={scheduleRules} />
-      <RuleSection title="Time Exception Rules" type="exception" data={timeExceptions} />
+        {canAddRule() && (
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+          >
+            {showForm ? "Cancel" : `Add ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Rule`}
+          </button>
+        )}
+      </div>
 
-      {/* Modal */}
-      {openModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center">
-          <div className="bg-white text-black p-6 rounded-lg w-[400px]">
-            <h2 className="text-xl font-bold mb-4">
-              {editingRule ? "Edit Rule" : "Create Rule"}
-            </h2>
-
-            <div className="space-y-3">{renderFormFields()}</div>
-
+      {/* Tabs */}
+      <div className="mb-6 w-full max-w-6xl">
+        <div className="flex space-x-1 bg-gray-200 dark:bg-gray-700 rounded-lg p-1">
+          {["schedule", "overtime", "lateness"].map((tab) => (
             <button
-              className="mt-6 w-full bg-blue-600 text-white py-2 rounded"
-              onClick={handleSubmit}
+              key={tab}
+              onClick={() => {
+                setActiveTab(tab as RuleType);
+                setShowForm(false);
+                setEditingRule(null);
+              }}
+              className={`flex-1 py-2 px-4 rounded-md font-medium transition ${
+                activeTab === tab
+                  ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow"
+                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              }`}
             >
-              Save
+              {tab.charAt(0).toUpperCase() + tab.slice(1)} Rules
             </button>
+          ))}
+        </div>
+      </div>
 
-            <button
-              className="mt-2 w-full bg-gray-400 text-black py-2 rounded"
-              onClick={() => setOpenModal(false)}
-            >
-              Cancel
-            </button>
-          </div>
+      {/* Add/Edit Form */}
+      {showForm && (
+        <div className="mb-6 w-full max-w-6xl bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+            {editingRule ? "Edit" : "Add"} {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Rule
+          </h3>
+
+          {activeTab === "schedule" && (
+            <form onSubmit={submitScheduleRule} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Rule Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newScheduleRule.name}
+                    onChange={(e) =>
+                      setNewScheduleRule({ ...newScheduleRule, name: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Description
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newScheduleRule.description}
+                    onChange={(e) =>
+                      setNewScheduleRule({ ...newScheduleRule, description: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Working Days/Week
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="7"
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newScheduleRule.workingDaysPerWeek}
+                    onChange={(e) =>
+                      setNewScheduleRule({ ...newScheduleRule, workingDaysPerWeek: parseInt(e.target.value) })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Working Hours/Day
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="24"
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newScheduleRule.workingHoursPerDay}
+                    onChange={(e) =>
+                      setNewScheduleRule({ ...newScheduleRule, workingHoursPerDay: parseInt(e.target.value) })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Start Time
+                  </label>
+                  <input
+                    type="time"
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newScheduleRule.startTime}
+                    onChange={(e) =>
+                      setNewScheduleRule({ ...newScheduleRule, startTime: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    End Time
+                  </label>
+                  <input
+                    type="time"
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newScheduleRule.endTime}
+                    onChange={(e) =>
+                      setNewScheduleRule({ ...newScheduleRule, endTime: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Break Duration (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newScheduleRule.breakDuration}
+                    onChange={(e) =>
+                      setNewScheduleRule({ ...newScheduleRule, breakDuration: parseInt(e.target.value) })
+                    }
+                    required
+                  />
+                </div>
+                <div className="flex items-center space-x-2 pt-6">
+                  <input
+                    type="checkbox"
+                    checked={newScheduleRule.active}
+                    onChange={(e) =>
+                      setNewScheduleRule({ ...newScheduleRule, active: e.target.checked })
+                    }
+                  />
+                  <span className="text-gray-700 dark:text-gray-300">Active</span>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+              >
+                {editingRule ? "Update" : "Save"} Schedule Rule
+              </button>
+            </form>
+          )}
+
+          {activeTab === "overtime" && (
+            <form onSubmit={submitOvertimeRule} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Rule Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newOvertimeRule.name}
+                    onChange={(e) =>
+                      setNewOvertimeRule({ ...newOvertimeRule, name: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Description
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newOvertimeRule.description}
+                    onChange={(e) =>
+                      setNewOvertimeRule({ ...newOvertimeRule, description: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Type
+                  </label>
+                  <select
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newOvertimeRule.type}
+                    onChange={(e) =>
+                      setNewOvertimeRule({
+                        ...newOvertimeRule,
+                        type: e.target.value as OvertimeRule["type"],
+                      })
+                    }
+                    required
+                  >
+                    <option value="DAILY">Daily</option>
+                    <option value="WEEKLY">Weekly</option>
+                    <option value="MONTHLY">Monthly</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Threshold (hours)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newOvertimeRule.threshold}
+                    onChange={(e) =>
+                      setNewOvertimeRule({ ...newOvertimeRule, threshold: parseFloat(e.target.value) })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Rate Multiplier
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="0.1"
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newOvertimeRule.rate}
+                    onChange={(e) =>
+                      setNewOvertimeRule({ ...newOvertimeRule, rate: parseFloat(e.target.value) })
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={newOvertimeRule.active}
+                  onChange={(e) =>
+                    setNewOvertimeRule({ ...newOvertimeRule, active: e.target.checked })
+                  }
+                />
+                <span className="text-gray-700 dark:text-gray-300">Active</span>
+              </div>
+
+              <button
+                type="submit"
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+              >
+                {editingRule ? "Update" : "Save"} Overtime Rule
+              </button>
+            </form>
+          )}
+
+          {activeTab === "lateness" && (
+            <form onSubmit={submitLatenessRule} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Rule Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newLatenessRule.name}
+                    onChange={(e) =>
+                      setNewLatenessRule({ ...newLatenessRule, name: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Description
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newLatenessRule.description}
+                    onChange={(e) =>
+                      setNewLatenessRule({ ...newLatenessRule, description: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Grace Time (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newLatenessRule.graceTime}
+                    onChange={(e) =>
+                      setNewLatenessRule({ ...newLatenessRule, graceTime: parseInt(e.target.value) })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Penalty Type
+                  </label>
+                  <select
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newLatenessRule.penaltyType}
+                    onChange={(e) =>
+                      setNewLatenessRule({
+                        ...newLatenessRule,
+                        penaltyType: e.target.value as LatenessRule["penaltyType"],
+                      })
+                    }
+                    required
+                  >
+                    <option value="WARNING">Warning</option>
+                    <option value="DEDUCTION">Deduction</option>
+                    <option value="BOTH">Both</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Penalty Amount
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    value={newLatenessRule.penaltyAmount}
+                    onChange={(e) =>
+                      setNewLatenessRule({ ...newLatenessRule, penaltyAmount: parseFloat(e.target.value) })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={newLatenessRule.active}
+                  onChange={(e) =>
+                    setNewLatenessRule({ ...newLatenessRule, active: e.target.checked })
+                  }
+                />
+                <span className="text-gray-700 dark:text-gray-300">Active</span>
+              </div>
+
+              <button
+                type="submit"
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+              >
+                {editingRule ? "Update" : "Save"} Lateness Rule
+              </button>
+            </form>
+          )}
         </div>
       )}
+
+      {/* Rules List */}
+      <div className="w-full max-w-6xl bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+          {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Rules
+        </h2>
+
+        {activeTab === "schedule" && (
+          <div className="space-y-4">
+            {scheduleRules.length === 0 ? (
+              <p className="text-gray-600 dark:text-gray-400 text-center py-8">
+                No schedule rules found.
+              </p>
+            ) : (
+              scheduleRules.map((rule) => (
+                <div
+                  key={rule._id}
+                  className="border dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        {rule.name}
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">
+                        {rule.description}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                        <span>{rule.workingDaysPerWeek} days/week</span>
+                        <span>{rule.workingHoursPerDay} hours/day</span>
+                        <span>{rule.startTime} - {rule.endTime}</span>
+                        <span>{rule.breakDuration} min break</span>
+                        <span className={`px-2 py-1 rounded ${rule.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                          {rule.active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                    {canEditRule() && (
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => editRule(rule, "schedule")}
+                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteScheduleRule(rule._id!)}
+                          className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {activeTab === "overtime" && (
+          <div className="space-y-4">
+            {overtimeRules.length === 0 ? (
+              <p className="text-gray-600 dark:text-gray-400 text-center py-8">
+                No overtime rules found.
+              </p>
+            ) : (
+              overtimeRules.map((rule) => (
+                <div
+                  key={rule._id}
+                  className="border dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        {rule.name}
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">
+                        {rule.description}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                        <span>{rule.type}</span>
+                        <span>Threshold: {rule.threshold} hours</span>
+                        <span>Rate: {rule.rate}x</span>
+                        <span className={`px-2 py-1 rounded ${rule.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                          {rule.active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                    {canEditRule() && (
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => editRule(rule, "overtime")}
+                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteOvertimeRule(rule._id!)}
+                          className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {activeTab === "lateness" && (
+          <div className="space-y-4">
+            {latenessRules.length === 0 ? (
+              <p className="text-gray-600 dark:text-gray-400 text-center py-8">
+                No lateness rules found.
+              </p>
+            ) : (
+              latenessRules.map((rule) => (
+                <div
+                  key={rule._id}
+                  className="border dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        {rule.name}
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">
+                        {rule.description}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                        <span>Grace: {rule.graceTime} minutes</span>
+                        <span>Penalty: {rule.penaltyType}</span>
+                        {rule.penaltyAmount && <span>Amount: ${rule.penaltyAmount}</span>}
+                        <span className={`px-2 py-1 rounded ${rule.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                          {rule.active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                    {canEditRule() && (
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => editRule(rule, "lateness")}
+                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteLatenessRule(rule._id!)}
+                          className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
     </div>
-    
   );
 }
+
+
+
+
