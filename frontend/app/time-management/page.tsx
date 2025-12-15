@@ -68,20 +68,24 @@ export default function TimeManagementPage() {
             )}
 
             {/* Attendance */}
+          <Link href={'time-management/attendance'}>
             <DashboardCard
               title="Attendance"
               description="Review your attendance history and patterns"
               icon="🗓️"
             />
+            </Link>
 
             
             {/* Rules */}
             {isManagerOrAdmin && (
+          <Link href={'time-management/rules'}>  
             <DashboardCard
               title="Rules"
               description="View company time management policies"
               icon="📜"
             />
+            </Link>
             )}
 
             {/* Notifications */}
