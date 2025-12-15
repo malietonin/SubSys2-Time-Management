@@ -1,7 +1,9 @@
-"use client";
+ "use client";
 
 import { useAuth } from "@/app/(system)/context/authContext";
 import Link from "next/link";
+import ClockInOut from "./clock-in-out/ClockInOut";
+
 
 export default function TimeManagementPage() {
   const { user, logout } = useAuth();
@@ -58,14 +60,25 @@ export default function TimeManagementPage() {
             />
             </Link>
 
-            {/* Clock In/Out - only for employees */}
-            {isEmployee && (
-              <DashboardCard
-                title="Clock In / Out"
-                description="Record your start and end work times"
-                icon="⏱️"
-              />
-            )}
+           
+
+ <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <Link href="/time-management/clock-in-out">
+    <DashboardCard
+      title="Clock In / Out"
+      description="Record your start and end work times"
+      icon="⏱️"
+    />
+  </Link>
+</div>
+
+<h1 className="text-2xl font-bold text-white">
+  Time Management
+</h1>
+
+<ClockInOut />
+
+
 
             {/* Attendance */}
           <Link href={'time-management/attendance'}>
@@ -96,6 +109,15 @@ export default function TimeManagementPage() {
                 icon="🔔"
               />            
             </Link>
+            {/* Time Exceptions */}
+         <Link href="/time-management/time-exceptions">
+            <DashboardCard
+                title="Time Exceptions"
+                description="Submit and review time exception requests (late, early leave, permissions)"
+                icon="⏰"
+                />
+              </Link>
+
 
 
             {/* Reports - only for payroll and hr */}
@@ -105,14 +127,31 @@ export default function TimeManagementPage() {
                 description="Generate and view time management reports"
                 icon="📊"
               />
+              
+              
             )}
+             
+{isManagerOrAdmin && (
+  <Link href="/time-management/rules">
+    <DashboardCard
+      title="Rules"
+      description="Manage lateness, overtime, schedule & exceptions"
+      icon="⚙️"
+    />
+  </Link>
+      
+)}
+
           </div>
         </div>
       </main>
     </div>
   );
 }
+  
+ 
 
+ 
 function DashboardCard({ title, description, icon }: { title: string; description: string; icon: string; }) {
   return (
     <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 hover:shadow-lg transition cursor-pointer">

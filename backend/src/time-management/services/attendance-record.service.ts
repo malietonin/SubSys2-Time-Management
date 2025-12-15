@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { AttendanceRecord, AttendanceRecordDocument, Punch } from '../models/attendance-record.schema';
@@ -11,8 +11,6 @@ import { LatenessRuleService } from './lateness-rule.service';
 import { CreateAttendanceRecordDto } from '../dtos/attendance-record-dto';
 import { UpdateAttendanceRecordDto } from '../dtos/update-attendance-record-dto';
 import { HolidayService } from './holiday.service';
-import { Shift, ShiftDocument } from '../models/shift.schema';
-import { LeavesService } from '../../leaves/leaves.service';
 
 @Injectable()
 export class AttendanceRecordService {
@@ -24,8 +22,6 @@ export class AttendanceRecordService {
     private scheduleRuleModel: Model<ScheduleRuleDocument>,
     @InjectModel(ShiftAssignment.name)
     private shiftAssignmentModel: Model<ShiftAssignmentDocument>,
-    @InjectModel(Shift.name)
-    private shiftModel: Model<ShiftDocument>,
     private latenessRuleService: LatenessRuleService,
     private holidayService: HolidayService,
     private leavesService: LeavesService
@@ -170,6 +166,11 @@ export class AttendanceRecordService {
     await record.save();
     return { success: true, message: 'Missed punches detected', data: record };
   }
+async detectMissedPunches(employeeId: string) {
+  const record = await this.attendanceModel.findOne({
+    employeeId: new Types.ObjectId(employeeId),
+  });
+  if (!record) throw new NotFoundException('Attendance record not found');
 
   async listAttendanceForEmployee(employeeId: string, startDate?: string, endDate?: string) {
     const employee = await this.employeeProfileService.getMyProfile(employeeId);
