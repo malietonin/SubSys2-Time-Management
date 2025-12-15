@@ -56,7 +56,7 @@ function EmployeeTimeExceptions({ user }: { user: any }) {
       </Link>
 
       <h1 className="text-2xl font-bold mb-6">
-        My Attendance Correction Requests
+        time Exceptions page
       </h1>
 
       <div className="flex gap-4 mb-6">
