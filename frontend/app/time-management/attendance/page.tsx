@@ -110,9 +110,15 @@ export default function AttendancePage() {
         <Link href="/time-management" className="text-blue-600 hover:underline dark:text-blue-400">
           &larr; Back to Dashboard
         </Link>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-5">
-          {isAdmin ? "All Attendance Records" : "My Attendance Record"}
-        </h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-5 flex items-center justify-between">
+            {isAdmin ? "All Attendance Records" : "My Attendance Record"}
+            <Link
+              href="/time-management/attendance/correction-request"
+              className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+            >
+              Correction Requests
+            </Link>
+          </h1>
 
         {isAdmin && (
           <div className="mb-4 flex space-x-2">
