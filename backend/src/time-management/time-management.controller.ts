@@ -476,12 +476,8 @@ export class TimeManagementController {
    @UseGuards(AuthGuard, RolesGuard)
    @Roles(SystemRole.DEPARTMENT_EMPLOYEE, SystemRole.HR_EMPLOYEE)
    @Post('time-exception') // line manager, hr admin
-   async createTimeException(@Body() dto: TimeExceptionCreateDto, @Req() req) {
-       // It's more secure to use the authenticated user's ID from the request
-       const employeeId = req.user.id;
-       // We remove the employeeId from the DTO to prevent users from submitting on behalf of others
-       const { employeeId: _, ...createData } = dto;
-       return this.timeExceptionService.create({ ...createData, employeeId });
+   async createTimeException(@Body() dto: TimeExceptionCreateDto) {
+       return this.timeExceptionService.create(dto);
    }
 
   
@@ -504,9 +500,8 @@ export class TimeManagementController {
 
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(SystemRole.DEPARTMENT_EMPLOYEE, SystemRole.HR_EMPLOYEE)
-    @Get('time-exception/my-exceptions')
-    async listMyTimeExceptions(@Req() req) {
-        const employeeId = req.user.id;
+    @Get('time-exception/my-exceptions/:id')
+    async listMyTimeExceptions(@Param("id") employeeId:string) {
         return this.timeExceptionService.listEmployeeTimeExceptions(employeeId);
     }
 

@@ -20,7 +20,7 @@ export class TimeExceptionService {
       attendanceRecordId: new Types.ObjectId(dto.attendanceRecordId),
       assignedTo: new Types.ObjectId(dto.assignedTo),
       reason: dto.reason,
-      status: TimeExceptionStatus.OPEN,
+      status: TimeExceptionStatus.PENDING,
     });
 
     return {
@@ -103,11 +103,16 @@ export class TimeExceptionService {
 
   // List exceptions submitted by an employee
   async listEmployeeTimeExceptions(employeeId: string) {
-    return await this.timeExceptionModel
+    const exception = await this.timeExceptionModel
       .find({ employeeId: new Types.ObjectId(employeeId) })
       .populate('attendanceRecordId')
-      .populate('assignedTo', 'firstName lastName email')
-      .exec();
+      .populate('assignedTo', 'firstName lastName workEmail')
+    if(!exception) throw new NotFoundException("Exceptions not found!");
+    return{
+      success:true,
+      message: "Time exceptions returned successfully!",
+      data: exception
+    }
   }
 
   // Auto-escalate pending exceptions older than 3 days
