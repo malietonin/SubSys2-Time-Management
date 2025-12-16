@@ -135,22 +135,27 @@ export class AttendanceRecordService {
     record.punches.push({ time: now, type: PunchType.OUT });
 
     // Recalculate total work minutes for today only
+   // Calculate total work minutes for all punches
     const inOutPairs: [Punch, Punch][] = [];
     let tempIn: Punch | null = null;
-    for (const p of todayPunches.concat({ time: now, type: PunchType.OUT })) {
-      if (p.type === PunchType.IN) tempIn = p;
-      else if (p.type === PunchType.OUT && tempIn) {
+
+    for (const p of record.punches) {
+      if (p.type === PunchType.IN) {
+        tempIn = p;
+      } else if (p.type === PunchType.OUT && tempIn) {
         inOutPairs.push([tempIn, p]);
         tempIn = null;
       }
     }
 
-    const totalMinutesToday = inOutPairs.reduce((sum, [inP, outP]) => {
-      return sum + Math.floor((new Date(outP.time).getTime() - new Date(inP.time).getTime()) / 60000);
-    }, 0);
+    // Sum total minutes
+    let totalMinutes = 0;
+    for (const [inPunch, outPunch] of inOutPairs) {
+      totalMinutes += (new Date(outPunch.time).getTime() - new Date(inPunch.time).getTime()) / 60000;
+    }
 
-    // Update only today’s total minutes (optional: you can store per-day totals if needed)
-    record.totalWorkMinutes += totalMinutesToday;
+    console.log('Total work minutes:', totalMinutes);
+    record.totalWorkMinutes = totalMinutes
 
     await record.save();
 

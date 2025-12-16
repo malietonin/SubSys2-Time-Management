@@ -166,7 +166,7 @@ export default function AttendancePage() {
               </div>
 
               <div className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-                ⏱️ Total Work: {Math.floor(record.totalWorkMinutes / 60)}h {record.totalWorkMinutes % 60}m •
+                ⏱️ Total Work: {Math.round(record.totalWorkMinutes)}m •
                 ⚠️ Missed Punches: {record.hasMissedPunch ? "Yes" : "No"} •
                 ✅ Finalized: {record.finalisedForPayroll ? "Yes" : "No"}
               </div>
