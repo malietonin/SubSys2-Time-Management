@@ -1,6 +1,3 @@
-// employees can submit correction requests for their attendance records
-// department heads or hr admins can approve/reject correction requests for their teams
-// department heads or hr admins can escalate unresolved requests to higher management
 "use client";
 
 import { useEffect, useState } from "react";
@@ -29,17 +26,21 @@ export default function AttendanceCorrectionRequestPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<CorrectionRequest | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [record, setRecord] = useState<{ _id: string } | null>(null);
 
   const { user } = useAuth();
 
-  // Check user roles
-  const isEmployee = user?.roles?.some((role: string) =>
-    ["HR Employee", "Department Employee"].includes(role)
-  );
+  const isEmployee = user?.roles?.some((role: string) => {
+    const normalizedRole = role.toLowerCase().trim();
+    return normalizedRole.includes('employee') || normalizedRole === 'hr employee' || normalizedRole === 'department employee';
+  });
 
-  const canApproveReject = user?.roles?.some((role: string) =>
-    ["Department Head", "HR Admin", "System Admin"].includes(role)
-  );
+  const canApproveReject = user?.roles?.some((role: string) => {
+    const normalizedRole = role.toLowerCase().trim();
+    return normalizedRole.includes('department head') || 
+           normalizedRole.includes('hr admin') || 
+           normalizedRole.includes('system admin');
+  });
 
   const canViewAll = canApproveReject;
 
@@ -49,27 +50,30 @@ export default function AttendanceCorrectionRequestPage() {
     
     setLoading(true);
     try {
-      let url = "";
-      
-      if (canViewAll) {
-        // Managers/Admins see all requests (we'll need a new endpoint)
-        // For now, we'll use the employee endpoint
-        url = `http://localhost:4000/time-management/attendance-correction-request/employee/${user.userid}`;
-      } else {
-        // Employees see only their requests
-        url = `http://localhost:4000/time-management/attendance-correction-request/employee/${user.userid}`;
+      let url;
+      if(user.roles?.some(role=> ["HR Admin", "System Admin",'department head'].includes(role))){
+         url =  `http://localhost:4000/time-management/attendance-correction-request/`
       }
-
-      const res = await axios.get(url, { withCredentials: true });
-      const data = res.data.data || res.data || [];
+      else{
+         url = `http://localhost:4000/time-management/attendance-correction-request/employee/${user.userid}`;      
+      }
       
-      const processedRequests = data.map((req: any) => ({
+      const res = await axios.get(url, { withCredentials: true });
+      
+      let data = res.data.data || res.data || [];
+      if (!Array.isArray(data) && data.data) data = data.data;
+
+      const processedRequests = Array.isArray(data) ? data.map((req: any) => ({
         ...req,
         createdAt: new Date(req.createdAt),
         updatedAt: new Date(req.updatedAt),
-      }));
+      })) : [];
 
       setRequests(processedRequests);
+
+      // Fetch user's attendance record
+      const res2 = await axios.get(`http://localhost:4000/time-management/attendance-record/${user.userid}`, { withCredentials: true });
+      setRecord(res2.data.data);
     } catch (err) {
       console.error("Error fetching requests:", err);
       setRequests([]);
@@ -84,7 +88,6 @@ export default function AttendanceCorrectionRequestPage() {
 
   const handleApprove = async (requestId: string) => {
     if (!confirm("Are you sure you want to approve this correction request?")) return;
-
     try {
       await axios.patch(
         `http://localhost:4000/time-management/attendance-correction-request/${requestId}/approve`,
@@ -101,7 +104,6 @@ export default function AttendanceCorrectionRequestPage() {
   const handleReject = async (requestId: string) => {
     const reason = prompt("Please provide a reason for rejection:");
     if (!reason) return;
-
     try {
       await axios.patch(
         `http://localhost:4000/time-management/attendance-correction-request/${requestId}/reject`,
@@ -115,53 +117,41 @@ export default function AttendanceCorrectionRequestPage() {
     }
   };
 
-  const handleDelete = async (requestId: string) => {
-    if (!confirm("Are you sure you want to delete this request?")) return;
-
+  const handleEscalate = async () => {
+    if (!confirm("This will escalate all pending requests older than 48 hours. Continue?")) return;
     try {
-      // Note: You'll need to add a delete endpoint in your backend
-      await axios.delete(
-        `http://localhost:4000/time-management/attendance-correction-request/${requestId}`,
+      await axios.post(
+        `http://localhost:4000/time-management/attendance-correction-request/auto-escalate`,
+        {},
         { withCredentials: true }
       );
+      alert("Pending requests escalated successfully!");
       fetchRequests();
     } catch (err) {
-      console.error("Error deleting request:", err);
-      alert("Failed to delete request");
+      console.error("Error escalating requests:", err);
+      alert("Failed to escalate requests");
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "SUBMITTED":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-      case "IN_REVIEW":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-      case "APPROVED":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case "REJECTED":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-      case "ESCALATED":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+      case "SUBMITTED": return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+      case "IN_REVIEW": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+      case "APPROVED": return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+      case "REJECTED": return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+      case "ESCALATED": return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
+      default: return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "SUBMITTED":
-        return "📤";
-      case "IN_REVIEW":
-        return "🔍";
-      case "APPROVED":
-        return "✅";
-      case "REJECTED":
-        return "❌";
-      case "ESCALATED":
-        return "⚠️";
-      default:
-        return "📋";
+      case "SUBMITTED": return "📤";
+      case "IN_REVIEW": return "🔍";
+      case "APPROVED": return "✅";
+      case "REJECTED": return "❌";
+      case "ESCALATED": return "⚠️";
+      default: return "📋";
     }
   };
 
@@ -203,14 +193,25 @@ export default function AttendanceCorrectionRequestPage() {
               </p>
             </div>
 
-            {isEmployee && (
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md"
-              >
-                ➕ Submit Request
-              </button>
-            )}
+            <div className="flex space-x-2">
+              {isEmployee && (
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md"
+                >
+                  ➕ Submit Request
+                </button>
+              )}
+              
+              {canApproveReject && (
+                <button
+                  onClick={handleEscalate}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition shadow-md"
+                >
+                  ⚠️ Auto-Escalate
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -236,7 +237,7 @@ export default function AttendanceCorrectionRequestPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
             <div className="text-sm text-gray-500 dark:text-gray-400">Total</div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{requests.length}</div>
@@ -312,16 +313,11 @@ export default function AttendanceCorrectionRequestPage() {
                         <strong>Reason:</strong> {request.reason}
                       </p>
                     </div>
-
-                    <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                      <span>📅 Created: {request.createdAt.toLocaleString()}</span>
-                      <span>🔄 Updated: {request.updatedAt.toLocaleString()}</span>
-                      <span>🆔 Record: {request.attendanceRecord}</span>
-                    </div>
                   </div>
 
                   <div className="flex space-x-2 ml-4">
-                    {canApproveReject && (request.status === "SUBMITTED" || request.status === "IN_REVIEW") && (
+                    {/* Managers can approve/reject SUBMITTED, IN_REVIEW, ESCALATED */}
+                    {canApproveReject && ["SUBMITTED","IN_REVIEW","ESCALATED"].includes(request.status) && (
                       <>
                         <button
                           onClick={() => handleApprove(request._id)}
@@ -329,30 +325,24 @@ export default function AttendanceCorrectionRequestPage() {
                         >
                           ✅ Approve
                         </button>
-                        <button
-                          onClick={() => handleReject(request._id)}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-md text-sm font-medium"
-                        >
-                          ❌ Reject
-                        </button>
+                        {request.status !== "APPROVED" && (
+                          <button
+                            onClick={() => handleReject(request._id)}
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-md text-sm font-medium"
+                          >
+                            ❌ Reject
+                          </button>
+                        )}
                       </>
                     )}
                     
-                    {isEmployee && (request.status === "SUBMITTED" || request.status === "IN_REVIEW") && (
+                    {/* Employees can edit SUBMITTED, IN_REVIEW, ESCALATED */}
+                    {isEmployee && ["SUBMITTED","IN_REVIEW","ESCALATED"].includes(request.status) && (
                       <button
                         onClick={() => setSelectedRequest(request)}
                         className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition shadow-md text-sm font-medium"
                       >
                         ✏️ Edit
-                      </button>
-                    )}
-
-                    {(request.status === "REJECTED" || request.status === "APPROVED") && (
-                      <button
-                        onClick={() => handleDelete(request._id)}
-                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition shadow-md text-sm font-medium"
-                      >
-                        🗑️ Delete
                       </button>
                     )}
                   </div>
@@ -377,6 +367,7 @@ export default function AttendanceCorrectionRequestPage() {
             setSelectedRequest(null);
           }}
           userId={user?.userid || ""}
+          recordId={record?._id || ""}
         />
       )}
     </div>
@@ -389,13 +380,15 @@ function CorrectionRequestModal({
   onClose,
   onSuccess,
   userId,
+  recordId,
 }: {
   request: CorrectionRequest | null;
   onClose: () => void;
   onSuccess: () => void;
   userId: string;
+  recordId: string;
 }) {
-  const [attendanceRecordId, setAttendanceRecordId] = useState(request?.attendanceRecord || "");
+  const [attendanceRecordId, setAttendanceRecordId] = useState(request?.attendanceRecord || recordId);
   const [reason, setReason] = useState(request?.reason || "");
   const [submitting, setSubmitting] = useState(false);
 
@@ -405,28 +398,23 @@ function CorrectionRequestModal({
 
     try {
       if (request) {
-        // Update existing request
         await axios.patch(
           `http://localhost:4000/time-management/attendance-correction-request/${request._id}`,
           { reason },
           { withCredentials: true }
         );
       } else {
-        // Create new request
         await axios.post(
           "http://localhost:4000/time-management/attendance-correction-request",
-          {
-            employeeId: userId,
-            attendanceRecordId,
-            reason,
-          },
+          { employeeId: userId, attendanceRecordId, reason },
           { withCredentials: true }
         );
       }
       onSuccess();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error saving request:", err);
-      alert("Failed to save request. Please try again.");
+      const errorMsg = err.response?.data?.message || "Failed to save request. Please try again.";
+      alert(errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -442,9 +430,7 @@ function CorrectionRequestModal({
         </div>
         
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          {request 
-            ? "Update your correction request details"
-            : "Submit a request to correct your attendance record"}
+          {request ? "Update the reason for your correction request" : "Submit a request to correct your attendance record"}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -462,7 +448,7 @@ function CorrectionRequestModal({
                 placeholder="Enter attendance record ID"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Find this in your attendance records
+                Prefilled with your current attendance record
               </p>
             </div>
           )}
@@ -487,7 +473,7 @@ function CorrectionRequestModal({
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
             <p className="text-xs text-blue-800 dark:text-blue-200">
               <strong>Note:</strong> Your request will be reviewed by your line manager or HR admin. 
-              You'll be notified once a decision is made.
+              Requests older than 48 hours may be auto-escalated.
             </p>
           </div>
 
@@ -497,17 +483,7 @@ function CorrectionRequestModal({
               disabled={submitting}
               className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md"
             >
-              {submitting ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Submitting...
-                </span>
-              ) : (
-                `📤 ${request ? "Update Request" : "Submit Request"}`
-              )}
+              {submitting ? "Submitting..." : `📤 ${request ? "Update Request" : "Submit Request"}`}
             </button>
             <button
               type="button"

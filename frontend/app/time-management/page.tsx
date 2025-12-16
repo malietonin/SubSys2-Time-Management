@@ -22,7 +22,7 @@ export default function TimeManagementPage() {
   );
 
   const isManagerOrAdminOrPayroll = user?.roles?.some(role =>
-    ['hr admin', 'system admin', 'manager', 'payroll manager', 'payroll specialist'].includes(role.toLowerCase())
+    ['hr admin', 'system admin', 'manager', 'payroll manager', 'payroll specialist', 'hr manager'].includes(role.toLowerCase())
   );
 
   return (
@@ -101,6 +101,16 @@ export default function TimeManagementPage() {
                   title="Reports"
                   description="Generate and view time management reports"
                   icon="📊"
+                />
+              </Link>
+            )}
+            {/* Rules - only for manager */}
+            {isManagerOrAdminOrPayroll && (
+              <Link href={'/time-management/rules'}>
+                <DashboardCard
+                  title="Rules"
+                  description="View, delete, update and create overtime, lateness and schedule rules."
+                  icon="📚"
                 />
               </Link>
             )}
