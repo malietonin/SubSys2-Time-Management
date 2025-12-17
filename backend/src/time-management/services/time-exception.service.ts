@@ -58,10 +58,7 @@ export class TimeExceptionService {
   async approve(id: string, approverId: string) {
     const exception = await this.timeExceptionModel.findById(id);
     if (!exception) throw new NotFoundException('Time Exception not found');
-    if (
-      exception.status !== TimeExceptionStatus.OPEN &&
-      exception.status !== TimeExceptionStatus.ESCALATED
-    ) {
+    if (exception.status!=="PENDING" && exception.status!=="ESCALATED") {
       throw new BadRequestException('Only pending or escalated exceptions can be approved');
     }
 
@@ -83,10 +80,7 @@ export class TimeExceptionService {
   async reject(id: string, approverId: string, reason: string) {
     const exception = await this.timeExceptionModel.findById(id);
     if (!exception) throw new NotFoundException('Time Exception not found');
-    if (
-      exception.status !== TimeExceptionStatus.OPEN &&
-      exception.status !== TimeExceptionStatus.ESCALATED
-    ) {
+    if (exception.status!=="PENDING" && exception.status!=="ESCALATED") {
       throw new BadRequestException('Only pending or escalated exceptions can be rejected');
     }
 
@@ -97,6 +91,22 @@ export class TimeExceptionService {
     return {
       success: true,
       message: 'Time Exception rejected successfully!',
+      data: exception,
+    };
+  }
+    async open(id: string, approverId: string) {
+    const exception = await this.timeExceptionModel.findById(id);
+    if (!exception) throw new NotFoundException('Time Exception not found');
+    if (exception.status!=="PENDING") {
+      throw new BadRequestException('Only pending or escalated exceptions can be opened');
+    }
+
+    exception.status = TimeExceptionStatus.OPEN;
+    await exception.save();
+
+    return {
+      success: true,
+      message: 'Time Exception opened successfully!',
       data: exception,
     };
   }
@@ -123,13 +133,11 @@ export class TimeExceptionService {
     const updated = await this.timeExceptionModel.updateMany(
       {
         status: TimeExceptionStatus.OPEN,
-        createdAt: { $lt: cutoff },
       },
       {
         $set: { status: TimeExceptionStatus.ESCALATED },
       },
     );
-
     return {
       success: true,
       escalatedCount: updated.modifiedCount,
@@ -143,7 +151,6 @@ export class TimeExceptionService {
       .populate('employeeId', 'firstName lastName email')
       .populate('assignedTo', 'firstName lastName email')
       .populate('attendanceRecordId')
-      .sort({ createdAt: -1 })
       .exec();
   }
 }

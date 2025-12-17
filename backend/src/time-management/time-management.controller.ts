@@ -188,7 +188,7 @@ export class TimeManagementController {
 
     // Attendance Record Functions
     @UseGuards(AuthGuard, RolesGuard, RolesGuard)
-    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_MANAGER, SystemRole.SYSTEM_ADMIN)
+    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_MANAGER, SystemRole.SYSTEM_ADMIN, SystemRole.HR_ADMIN, SystemRole.PAYROLL_MANAGER, SystemRole.PAYROLL_SPECIALIST)
     @Get('attendance-record') // Get all records with filters
     async getAllAttendanceRecords(
     @Query('employeeId') employeeId?: string
@@ -497,6 +497,13 @@ export class TimeManagementController {
         const approverId = req.user.id;
         return this.timeExceptionService.reject(id, approverId, reason);
     }
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_ADMIN, SystemRole.SYSTEM_ADMIN)
+    @Patch('time-exception/:id/open') // line manager, hr admin
+    async openTimeException(@Param('id') id: string, @Req() req) {
+        const approverId = req.user.id;
+        return this.timeExceptionService.open(id, approverId);
+    }
 
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(SystemRole.DEPARTMENT_EMPLOYEE, SystemRole.HR_EMPLOYEE)
@@ -521,8 +528,7 @@ export class TimeManagementController {
 
     // Overtime Rule Functions
 
-    @UseGuards(AuthGuard, RolesGuard)
-    @Roles(SystemRole.HR_MANAGER)
+    @UseGuards(AuthGuard)
     @Get('overtime-rule')
     async listOvertimeRules(){
         return this.overtimeRuleService.listOvertimeRules()

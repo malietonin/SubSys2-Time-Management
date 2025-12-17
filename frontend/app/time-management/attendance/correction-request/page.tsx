@@ -35,13 +35,15 @@ export default function AttendanceCorrectionRequestPage() {
     return normalizedRole.includes('employee') || normalizedRole === 'hr employee' || normalizedRole === 'department employee';
   });
 
-  const canApproveReject = user?.roles?.some((role: string) => {
-    const normalizedRole = role.toLowerCase().trim();
-    return normalizedRole.includes('department head') || 
-           normalizedRole.includes('hr admin') || 
-           normalizedRole.includes('system admin');
-  });
+const normalizedRoles = (user?.roles || []).map((r: string) =>
+  r.toLowerCase().trim()
+);
 
+const isDepartmentHead = normalizedRoles.includes("department head");
+const isHrAdmin = normalizedRoles.includes("hr admin");
+const isSystemAdmin = normalizedRoles.includes("system admin");
+
+  const canApproveReject = isDepartmentHead || isHrAdmin || isSystemAdmin;
   const canViewAll = canApproveReject;
 
   // Fetch correction requests
@@ -51,41 +53,54 @@ export default function AttendanceCorrectionRequestPage() {
     setLoading(true);
     try {
       let url;
-      if(user.roles?.some(role=> ["HR Admin", "System Admin",'department head'].includes(role))){
+      if(canApproveReject){
          url =  `http://localhost:4000/time-management/attendance-correction-request/`
       }
       else{
          url = `http://localhost:4000/time-management/attendance-correction-request/employee/${user.userid}`;      
       }
-      
-      const res = await axios.get(url, { withCredentials: true });
-      
-      let data = res.data.data || res.data || [];
-      if (!Array.isArray(data) && data.data) data = data.data;
+      if(canApproveReject)
+        {
+              const res = await axios.get(url, { withCredentials: true });
+              
+              
+              let data = res.data.data || res.data || [];
+              if (!Array.isArray(data) && data.data) data = data.data;
 
-      const processedRequests = Array.isArray(data) ? data.map((req: any) => ({
-        ...req,
-        createdAt: new Date(req.createdAt),
-        updatedAt: new Date(req.updatedAt),
-      })) : [];
+              const processedRequests = Array.isArray(data) ? data.map((req: any) => ({
+                ...req,
+                createdAt: new Date(req.createdAt),
+                updatedAt: new Date(req.updatedAt),
+              })) : [];
 
-      setRequests(processedRequests);
-
+              setRequests(processedRequests);
+        }
+        else{
       // Fetch user's attendance record
-      const res2 = await axios.get(`http://localhost:4000/time-management/attendance-record/${user.userid}`, { withCredentials: true });
+      const res2 = await axios.get(`${url}`, { withCredentials: true });
+      
       setRecord(res2.data.data);
+        }
+
+
     } catch (err) {
       console.error("Error fetching requests:", err);
-      setRequests([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    if(!user?.userid || !user.roles?.length) return;
     fetchRequests();
-  }, [user]);
+  }, [user?.userid, user?.roles]);
+  const visibleRequests = isDepartmentHead
+    ? requests.filter((r) => r.status === "APPROVED")
+    : requests;
 
+  const filteredRequests = visibleRequests.filter(
+    (r) => filterStatus === "ALL" || r.status === filterStatus
+  );
   const handleApprove = async (requestId: string) => {
     if (!confirm("Are you sure you want to approve this correction request?")) return;
     try {
@@ -155,9 +170,6 @@ export default function AttendanceCorrectionRequestPage() {
     }
   };
 
-  const filteredRequests = requests.filter(req => 
-    filterStatus === "ALL" || req.status === filterStatus
-  );
 
   if (loading) {
     return (
