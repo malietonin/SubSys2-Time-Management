@@ -43,8 +43,13 @@ export default function AttendanceCorrectionRequestPage() {
   const isHrManager = normalizedRoles.includes("hr manager");
   const isHrAdmin = normalizedRoles.includes("hr admin");
   const isSystemAdmin = normalizedRoles.includes("system admin");
+  const isPayrollOfficer = normalizedRoles.includes("payroll officer");
+  const isPayrollSpecialist = normalizedRoles.includes("payroll specialist");
+
 
   const isAdmin = isHrAdmin || isSystemAdmin;
+  const isPayroll = isPayrollOfficer || isPayrollSpecialist;
+
 
   // Fetch correction requests
   const fetchRequests = async () => {
@@ -55,13 +60,13 @@ export default function AttendanceCorrectionRequestPage() {
       let url;
       
       // Determine which endpoint to call based on role
-      if (isDepartmentHead || isHrManager || isAdmin) {
+      if (isDepartmentHead || isHrManager || isAdmin || isPayroll) {
         url = `http://localhost:4000/time-management/attendance-correction-request/`;
       } else {
         url = `http://localhost:4000/time-management/attendance-correction-request/employee/${user.userid}`;      
       }
 
-      if (isDepartmentHead || isHrManager || isAdmin) {
+      if (isDepartmentHead || isHrManager || isAdmin || isPayroll) {
         const res = await axios.get(url, { withCredentials: true });
         
         let data = res.data.data || res.data || [];
@@ -93,7 +98,7 @@ export default function AttendanceCorrectionRequestPage() {
 
   // Filter requests based on role
   const getVisibleRequests = () => {
-    if (isDepartmentHead) {
+    if (isDepartmentHead || isPayroll) {
       // Department heads only see APPROVED requests
       return requests.filter((r) => r.status === "APPROVED");
     } else if (isAdmin) {
@@ -175,6 +180,89 @@ export default function AttendanceCorrectionRequestPage() {
     }
   };
 
+  const exportToCSV = () => {
+    if (visibleRequests.length === 0) {
+      alert("No requests to export");
+      return;
+    }
+
+    // Prepare CSV data
+    const csvRows: string[] = [];
+    
+    // Header row
+    const headers = [
+      "Request ID",
+      "Employee ID",
+      "Employee Name",
+      "Employee Email",
+      "Attendance Record ID",
+      "Reason",
+      "Status",
+      "Created At",
+      "Updated At"
+    ];
+    csvRows.push(headers.join(","));
+
+    // Data rows
+    visibleRequests.forEach(request => {
+      const employeeName = typeof request.employeeId === "object" 
+        ? `${request.employeeId.firstName} ${request.employeeId.lastName}`
+        : "N/A";
+      
+      const employeeEmail = typeof request.employeeId === "object"
+        ? request.employeeId.email
+        : "N/A";
+
+      const employeeIdValue = typeof request.employeeId === "object"
+        ? request.employeeId._id
+        : request.employeeId;
+
+      csvRows.push([
+        request._id,
+        employeeIdValue,
+        `"${employeeName}"`,
+        employeeEmail,
+        request.attendanceRecord,
+        `"${request.reason.replace(/"/g, '""')}"`, // Escape quotes in reason
+        request.status,
+        `"${new Date(request.createdAt).toLocaleString("en-US", { 
+          year: "numeric", 
+          month: "2-digit", 
+          day: "2-digit",
+          hour: "2-digit", 
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false 
+        })}"`,
+        `"${new Date(request.updatedAt).toLocaleString("en-US", { 
+          year: "numeric", 
+          month: "2-digit", 
+          day: "2-digit",
+          hour: "2-digit", 
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false 
+        })}"`
+      ].join(","));
+    });
+
+    // Create CSV content
+    const csvContent = csvRows.join("\n");
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `attendance-correction-requests-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "SUBMITTED": return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
@@ -225,7 +313,7 @@ export default function AttendanceCorrectionRequestPage() {
                 Attendance Correction Requests
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {isDepartmentHead && "Review approved attendance correction requests"}
+                {isDepartmentHead || isPayroll && "Review approved attendance correction requests"}
                 {isHrManager && "Review and manage attendance correction requests"}
                 {isAdmin && "Review and manage escalated correction requests"}
                 {isEmployee && !isDepartmentHead && !isHrManager && !isAdmin && "Submit and track your attendance correction requests"}
@@ -239,6 +327,17 @@ export default function AttendanceCorrectionRequestPage() {
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md"
                 >
                   ➕ Submit Request
+                </button>
+              )}
+              
+              {(isDepartmentHead || isPayroll) && (
+                <button
+                  onClick={exportToCSV}
+                  disabled={visibleRequests.length === 0}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  <span>📊</span>
+                  <span>Export to CSV</span>
                 </button>
               )}
               
@@ -398,7 +497,7 @@ export default function AttendanceCorrectionRequestPage() {
                     )}
                     
                     {/* Employees can edit their own requests if not approved/rejected */}
-                    {isEmployee && !isDepartmentHead && !isHrManager && !isAdmin && ["SUBMITTED", "IN_REVIEW", "ESCALATED"].includes(request.status) && (
+                    {isEmployee && !isDepartmentHead && !isHrManager && !isPayroll && !isAdmin && ["SUBMITTED", "IN_REVIEW", "ESCALATED"].includes(request.status) && (
                       <button
                         onClick={() => setSelectedRequest(request)}
                         className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition shadow-md text-sm font-medium"
