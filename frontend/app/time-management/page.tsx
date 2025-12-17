@@ -24,6 +24,10 @@ export default function TimeManagementPage() {
   const isManagerOrAdminOrPayroll = user?.roles?.some(role =>
     ['hr admin', 'system admin', 'manager', 'payroll manager', 'payroll specialist', 'hr manager'].includes(role.toLowerCase())
   );
+  const isEmployee = user?.roles?.some(role => ['department employee', 'hr employee'].includes(role.toLowerCase()))
+  const isHRManager = user?.roles?.some(role =>
+    ['hr manager'].includes(role.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -41,9 +45,12 @@ export default function TimeManagementPage() {
           </h2>
 
           {/* Clock In/Out Component */}
+          {isEmployee &&
           <div className="mb-8">
             <ClockInOut />
           </div>
+          }
+
 
           {/* Dashboard Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -84,7 +91,7 @@ export default function TimeManagementPage() {
             </Link>
 
             {/* Rules - only for managers/admins */}
-            {isManagerOrAdmin && (
+            {isManagerOrAdmin || isHRManager && (
               <Link href={'/time-management/rules'}>
                 <DashboardCard
                   title="Rules"
@@ -101,16 +108,6 @@ export default function TimeManagementPage() {
                   title="Reports"
                   description="Generate and view time management reports"
                   icon="📊"
-                />
-              </Link>
-            )}
-            {/* Rules - only for manager */}
-            {isManagerOrAdminOrPayroll && (
-              <Link href={'/time-management/rules'}>
-                <DashboardCard
-                  title="Rules"
-                  description="View, delete, update and create overtime, lateness and schedule rules."
-                  icon="📚"
                 />
               </Link>
             )}

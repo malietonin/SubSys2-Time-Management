@@ -34,7 +34,7 @@ export default function AttendancePage() {
 
   const isAdmin =
     user?.roles?.some((role: string) =>
-      ["department head", "hr manager", "system admin"].includes(role.toLowerCase())
+      ["department head", "hr manager", "system admin", "hr admin"].includes(role.toLowerCase())
     ) || false;
 
   const toggleExpand = (recordId: string) => {
@@ -88,11 +88,100 @@ export default function AttendancePage() {
     fetchRecords();
   }, [user]);
 
+
+
   const formatTime = (date: Date) =>
     date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
 
   const formatDate = (date: Date) =>
     date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+
+  const formatDateTimeForCSV = (date: Date) =>
+    date.toLocaleString("en-US", { 
+      year: "numeric", 
+      month: "2-digit", 
+      day: "2-digit",
+      hour: "2-digit", 
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false 
+    });
+
+  const exportToCSV = () => {
+    if (records.length === 0) {
+      alert("No records to export");
+      return;
+    }
+
+    // Prepare CSV data
+    const csvRows: string[] = [];
+    
+    // Header row
+    const headers = [
+      "Employee ID",
+      "Employee Name",
+      "Employee Email",
+      "Punch Type",
+      "Punch Time",
+      "Total Work Minutes",
+      "Total Work Hours",
+      "Has Missed Punch",
+      "Finalized for Payroll"
+    ];
+    csvRows.push(headers.join(","));
+
+    // Data rows - one row per punch
+    records.forEach(record => {
+      const employeeName = `${record.employeeId.firstName} ${record.employeeId.lastName}`;
+      const totalHours = (record.totalWorkMinutes / 60).toFixed(2);
+
+      if (record.punches.length === 0) {
+        // If no punches, still show the record
+        csvRows.push([
+          record.employeeId._id,
+          `${employeeName}`,
+          record.employeeId.workEmail,
+          "No Punches",
+          "",
+          record.totalWorkMinutes,
+          totalHours,
+          record.hasMissedPunch ? "Yes" : "No",
+          record.finalisedForPayroll ? "Yes" : "No"
+        ].join(","));
+      } else {
+        // Create a row for each punch
+        record.punches.forEach(punch => {
+          csvRows.push([
+            record.employeeId._id,
+            `${employeeName}`,
+            record.employeeId.workEmail,
+            punch.type,
+            `${formatDateTimeForCSV(punch.time)}`,
+            record.totalWorkMinutes,
+            totalHours,
+            record.hasMissedPunch ? "Yes" : "No",
+            record.finalisedForPayroll ? "Yes" : "No"
+          ].join(","));
+        });
+      }
+    });
+
+    // Create CSV content
+    const csvContent = csvRows.join("\n");
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `attendance-records-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (loading)
     return (
@@ -119,6 +208,18 @@ export default function AttendancePage() {
               Correction Requests
             </Link>
           </h1>
+           <div className="flex space-x-2">
+            <button
+              onClick={exportToCSV}
+              disabled={records.length === 0}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              <span>📊</span>
+              <span>Export to CSV</span>
+            </button>
+</div>
+
+          
 
         {isAdmin && (
           <div className="mb-4 flex space-x-2">

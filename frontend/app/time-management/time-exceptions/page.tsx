@@ -55,6 +55,12 @@ export default function TimeExceptionsPage() {
   const isSystemAdmin = useMemo(() =>
     !!user?.roles?.includes("System Admin"), [user?.roles]);
 
+  const isHRManager = useMemo(() =>
+    !!user?.roles?.includes("HR Manager"), [user?.roles]);  
+
+    const isManagerOrAdmin = user?.roles?.some(role =>
+    ['hr admin', 'system admin',].includes(role.toLowerCase())
+  );
   /* ===================== FETCH DATA ===================== */
 
   const fetchAttendanceRecord = async () => {
@@ -140,6 +146,17 @@ export default function TimeExceptionsPage() {
     } catch (err) { console.error(err); }
   };
 
+    const openException = async (id: string) => {
+    try {
+      await axios.patch(
+        `http://localhost:4000/time-management/time-exception/${id}/open`,
+        {},
+        { withCredentials: true }
+      );
+      await fetchExceptions();
+    } catch (err) { console.error(err); }
+  };
+
   const autoEscalate = async () => {
     try {
       await axios.post(
@@ -185,13 +202,21 @@ export default function TimeExceptionsPage() {
             </p>
           </div>
         )}
-
+              {isManagerOrAdmin&& (
+                <button
+                  onClick={autoEscalate}
+                  className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition"
+                >
+                  Auto-Escalate Pending
+                </button>
+              )}
         {exceptions.map((ex) => (
           <div
             key={ex._id}
             className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700"
           >
             <div className="flex justify-between items-center mb-2">
+              
               <div>
                 <h2 className="font-semibold text-lg text-gray-900 dark:text-white">
                   Employee Name: {ex.employeeId ? `${ex.employeeId.firstName} ${ex.employeeId.lastName}` : "—"}
@@ -200,19 +225,12 @@ export default function TimeExceptionsPage() {
                   Type: {ex.type} • Status: {ex.status}
                 </p>
               </div>
-              {isSystemAdmin && ex.status === "PENDING" && (
-                <button
-                  onClick={autoEscalate}
-                  className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition"
-                >
-                  Auto-Escalate Pending
-                </button>
-              )}
+
             </div>
 
             <p className="text-gray-600 dark:text-gray-400 mb-4">Reason: {ex.reason}</p>
 
-            {isAdmin && ex.status !== "APPROVED" && (
+            {isAdmin && ex.status !== "APPROVED" && ex.status!=="REJECTED" && (
               <div className="flex space-x-2">
                 <button
                   onClick={() => approveException(ex._id)}
@@ -228,6 +246,14 @@ export default function TimeExceptionsPage() {
                   className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
                 >
                   Reject
+                </button>
+                                <button
+                  onClick={() => {
+                    openException(ex._id);
+                  }}
+                  className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-orange-300 transition"
+                >
+                  Open
                 </button>
               </div>
             )}
