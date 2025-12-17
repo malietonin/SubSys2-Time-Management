@@ -35,16 +35,16 @@ export default function AttendanceCorrectionRequestPage() {
     return normalizedRole.includes('employee') || normalizedRole === 'hr employee' || normalizedRole === 'department employee';
   });
 
-const normalizedRoles = (user?.roles || []).map((r: string) =>
-  r.toLowerCase().trim()
-);
+  const normalizedRoles = (user?.roles || []).map((r: string) =>
+    r.toLowerCase().trim()
+  );
 
-const isDepartmentHead = normalizedRoles.includes("department head");
-const isHrAdmin = normalizedRoles.includes("hr admin");
-const isSystemAdmin = normalizedRoles.includes("system admin");
+  const isDepartmentHead = normalizedRoles.includes("department head");
+  const isHrManager = normalizedRoles.includes("hr manager");
+  const isHrAdmin = normalizedRoles.includes("hr admin");
+  const isSystemAdmin = normalizedRoles.includes("system admin");
 
-  const canApproveReject = isDepartmentHead || isHrAdmin || isSystemAdmin;
-  const canViewAll = canApproveReject;
+  const isAdmin = isHrAdmin || isSystemAdmin;
 
   // Fetch correction requests
   const fetchRequests = async () => {
@@ -53,36 +53,32 @@ const isSystemAdmin = normalizedRoles.includes("system admin");
     setLoading(true);
     try {
       let url;
-      if(canApproveReject){
-         url =  `http://localhost:4000/time-management/attendance-correction-request/`
-      }
-      else{
-         url = `http://localhost:4000/time-management/attendance-correction-request/employee/${user.userid}`;      
-      }
-      if(canApproveReject)
-        {
-              const res = await axios.get(url, { withCredentials: true });
-              
-              
-              let data = res.data.data || res.data || [];
-              if (!Array.isArray(data) && data.data) data = data.data;
-
-              const processedRequests = Array.isArray(data) ? data.map((req: any) => ({
-                ...req,
-                createdAt: new Date(req.createdAt),
-                updatedAt: new Date(req.updatedAt),
-              })) : [];
-
-              setRequests(processedRequests);
-        }
-        else{
-      // Fetch user's attendance record
-      const res2 = await axios.get(`${url}`, { withCredentials: true });
       
-      setRecord(res2.data.data);
-        }
+      // Determine which endpoint to call based on role
+      if (isDepartmentHead || isHrManager || isAdmin) {
+        url = `http://localhost:4000/time-management/attendance-correction-request/`;
+      } else {
+        url = `http://localhost:4000/time-management/attendance-correction-request/employee/${user.userid}`;      
+      }
 
+      if (isDepartmentHead || isHrManager || isAdmin) {
+        const res = await axios.get(url, { withCredentials: true });
+        
+        let data = res.data.data || res.data || [];
+        if (!Array.isArray(data) && data.data) data = data.data;
 
+        const processedRequests = Array.isArray(data) ? data.map((req: any) => ({
+          ...req,
+          createdAt: new Date(req.createdAt),
+          updatedAt: new Date(req.updatedAt),
+        })) : [];
+
+        setRequests(processedRequests);
+      } else {
+        // Fetch user's attendance record for employees
+        const res2 = await axios.get(`${url}`, { withCredentials: true });
+        setRecord(res2.data.data);
+      }
     } catch (err) {
       console.error("Error fetching requests:", err);
     } finally {
@@ -91,16 +87,32 @@ const isSystemAdmin = normalizedRoles.includes("system admin");
   };
 
   useEffect(() => {
-    if(!user?.userid || !user.roles?.length) return;
+    if (!user?.userid || !user.roles?.length) return;
     fetchRequests();
   }, [user?.userid, user?.roles]);
-  const visibleRequests = isDepartmentHead
-    ? requests.filter((r) => r.status === "APPROVED")
-    : requests;
+
+  // Filter requests based on role
+  const getVisibleRequests = () => {
+    if (isDepartmentHead) {
+      // Department heads only see APPROVED requests
+      return requests.filter((r) => r.status === "APPROVED");
+    } else if (isAdmin) {
+      // Admins only see ESCALATED requests
+      return requests.filter((r) => r.status === "ESCALATED");
+    } else if (isHrManager) {
+      // HR Managers see all EXCEPT escalated
+      return requests.filter((r) => r.status !== "ESCALATED");
+    }
+    // Employees see all their requests
+    return requests;
+  };
+
+  const visibleRequests = getVisibleRequests();
 
   const filteredRequests = visibleRequests.filter(
     (r) => filterStatus === "ALL" || r.status === filterStatus
   );
+
   const handleApprove = async (requestId: string) => {
     if (!confirm("Are you sure you want to approve this correction request?")) return;
     try {
@@ -132,7 +144,22 @@ const isSystemAdmin = normalizedRoles.includes("system admin");
     }
   };
 
-  const handleEscalate = async () => {
+  const handleEscalateRequest = async (requestId: string) => {
+    if (!confirm("Are you sure you want to escalate this correction request to admins?")) return;
+    try {
+      await axios.patch(
+        `http://localhost:4000/time-management/attendance-correction-request/${requestId}/escalate`,
+        {},
+        { withCredentials: true }
+      );
+      fetchRequests();
+    } catch (err) {
+      console.error("Error escalating request:", err);
+      alert("Failed to escalate request");
+    }
+  };
+
+  const handleAutoEscalate = async () => {
     if (!confirm("This will escalate all pending requests older than 48 hours. Continue?")) return;
     try {
       await axios.post(
@@ -170,7 +197,6 @@ const isSystemAdmin = normalizedRoles.includes("system admin");
     }
   };
 
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -199,9 +225,10 @@ const isSystemAdmin = normalizedRoles.includes("system admin");
                 Attendance Correction Requests
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {canViewAll 
-                  ? "Review and manage attendance correction requests"
-                  : "Submit and track your attendance correction requests"}
+                {isDepartmentHead && "Review approved attendance correction requests"}
+                {isHrManager && "Review and manage attendance correction requests"}
+                {isAdmin && "Review and manage escalated correction requests"}
+                {isEmployee && !isDepartmentHead && !isHrManager && !isAdmin && "Submit and track your attendance correction requests"}
               </p>
             </div>
 
@@ -215,12 +242,12 @@ const isSystemAdmin = normalizedRoles.includes("system admin");
                 </button>
               )}
               
-              {canApproveReject && (
+              {isHrManager && (
                 <button
-                  onClick={handleEscalate}
+                  onClick={handleAutoEscalate}
                   className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition shadow-md"
                 >
-                  ⚠️ Auto-Escalate
+                  ⚠️ Auto-Escalate Old Requests
                 </button>
               )}
             </div>
@@ -252,30 +279,30 @@ const isSystemAdmin = normalizedRoles.includes("system admin");
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
             <div className="text-sm text-gray-500 dark:text-gray-400">Total</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{requests.length}</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{visibleRequests.length}</div>
           </div>
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
             <div className="text-sm text-gray-500 dark:text-gray-400">Submitted</div>
             <div className="text-2xl font-bold text-blue-600">
-              {requests.filter(r => r.status === "SUBMITTED").length}
+              {visibleRequests.filter(r => r.status === "SUBMITTED").length}
             </div>
           </div>
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
             <div className="text-sm text-gray-500 dark:text-gray-400">In Review</div>
             <div className="text-2xl font-bold text-yellow-600">
-              {requests.filter(r => r.status === "IN_REVIEW").length}
+              {visibleRequests.filter(r => r.status === "IN_REVIEW").length}
             </div>
           </div>
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
             <div className="text-sm text-gray-500 dark:text-gray-400">Approved</div>
             <div className="text-2xl font-bold text-green-600">
-              {requests.filter(r => r.status === "APPROVED").length}
+              {visibleRequests.filter(r => r.status === "APPROVED").length}
             </div>
           </div>
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
             <div className="text-sm text-gray-500 dark:text-gray-400">Rejected</div>
             <div className="text-2xl font-bold text-red-600">
-              {requests.filter(r => r.status === "REJECTED").length}
+              {visibleRequests.filter(r => r.status === "REJECTED").length}
             </div>
           </div>
         </div>
@@ -328,8 +355,8 @@ const isSystemAdmin = normalizedRoles.includes("system admin");
                   </div>
 
                   <div className="flex space-x-2 ml-4">
-                    {/* Managers can approve/reject SUBMITTED, IN_REVIEW, ESCALATED */}
-                    {canApproveReject && ["SUBMITTED","IN_REVIEW","ESCALATED"].includes(request.status) && (
+                    {/* HR Manager buttons - can approve, reject, and escalate non-escalated requests */}
+                    {isHrManager && (
                       <>
                         <button
                           onClick={() => handleApprove(request._id)}
@@ -337,19 +364,41 @@ const isSystemAdmin = normalizedRoles.includes("system admin");
                         >
                           ✅ Approve
                         </button>
-                        {request.status !== "APPROVED" && (
-                          <button
-                            onClick={() => handleReject(request._id)}
-                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-md text-sm font-medium"
-                          >
-                            ❌ Reject
-                          </button>
-                        )}
+                        <button
+                          onClick={() => handleReject(request._id)}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-md text-sm font-medium"
+                        >
+                          ❌ Reject
+                        </button>
+                        <button
+                          onClick={() => handleEscalateRequest(request._id)}
+                          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition shadow-md text-sm font-medium"
+                        >
+                          ⚠️ Escalate
+                        </button>
+                      </>
+                    )}
+
+                    {/* Admin buttons - can only approve or reject escalated requests */}
+                    {isAdmin && request.status === "ESCALATED" && (
+                      <>
+                        <button
+                          onClick={() => handleApprove(request._id)}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md text-sm font-medium"
+                        >
+                          ✅ Approve
+                        </button>
+                        <button
+                          onClick={() => handleReject(request._id)}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-md text-sm font-medium"
+                        >
+                          ❌ Reject
+                        </button>
                       </>
                     )}
                     
-                    {/* Employees can edit SUBMITTED, IN_REVIEW, ESCALATED */}
-                    {isEmployee && ["SUBMITTED","IN_REVIEW","ESCALATED"].includes(request.status) && (
+                    {/* Employees can edit their own requests if not approved/rejected */}
+                    {isEmployee && !isDepartmentHead && !isHrManager && !isAdmin && ["SUBMITTED", "IN_REVIEW", "ESCALATED"].includes(request.status) && (
                       <button
                         onClick={() => setSelectedRequest(request)}
                         className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition shadow-md text-sm font-medium"

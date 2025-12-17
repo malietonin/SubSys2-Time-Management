@@ -319,6 +319,19 @@ export class TimeManagementController {
     }
 
     @UseGuards(AuthGuard, RolesGuard)
+    @Roles(SystemRole.HR_MANAGER)
+    @Patch('attendance-correction-request/:id/escalate') // HR manager, HR admin, sys admin
+    async escalateRequest(@Param('id') id: string) {
+    const result = await this.attendanceCorrectionRequestService.escalateCorrectionRequest(id);
+    return {
+        success: true,
+        message: 'Correction request escalated successfully!',
+        data: result
+        };
+    }
+
+
+    @UseGuards(AuthGuard, RolesGuard)
     @Roles(SystemRole.SYSTEM_ADMIN, SystemRole.HR_ADMIN)
     @Patch('attendance-correction-request/:id/approve') // sys admin, hr admin
     async approveCorrectionRequest(@Param('id') id: string) {
@@ -369,7 +382,7 @@ export class TimeManagementController {
     
     @UseGuards(AuthGuard, RolesGuard)
     @Get('attendance-correction-request')
-    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_ADMIN, SystemRole.SYSTEM_ADMIN)
+    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_ADMIN, SystemRole.SYSTEM_ADMIN, SystemRole.HR_MANAGER)
     async getAllCorrectionRequests() {
     return this.attendanceCorrectionRequestService.getAllCorrectionRequests();
     }

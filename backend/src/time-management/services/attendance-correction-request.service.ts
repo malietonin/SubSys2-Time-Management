@@ -95,6 +95,26 @@ export class AttendanceCorrectionRequestService {
       .exec();
   }
 
+  async escalateCorrectionRequest(id: string) {
+    const request = await this.requestModel.findById(id);
+    
+    if (!request) throw new NotFoundException('Correction request not found!');
+    
+    if (request.status !== CorrectionRequestStatus.SUBMITTED && 
+        request.status !== CorrectionRequestStatus.IN_REVIEW) {
+      throw new BadRequestException('Only pending requests can be escalated.');
+    }
+  
+    request.status = CorrectionRequestStatus.ESCALATED;
+    await request.save();
+  
+    return {
+      success: true,
+      message: 'Correction request escalated successfully!',
+      data: request,
+    };
+  }
+
   async autoEscalatePendingCorrections() {
     
     const cutoff = new Date();
@@ -102,9 +122,9 @@ export class AttendanceCorrectionRequestService {
   
     const updated = await this.requestModel.updateMany(
       {
-        status: CorrectionRequestStatus.IN_REVIEW,
+        status: CorrectionRequestStatus.SUBMITTED,
         createdAt: { $lt: cutoff }
-      },
+      }, 
       {
         $set: { status: CorrectionRequestStatus.ESCALATED }
       }
