@@ -188,7 +188,7 @@ export class TimeManagementController {
 
     // Attendance Record Functions
     @UseGuards(AuthGuard, RolesGuard, RolesGuard)
-    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_MANAGER, SystemRole.SYSTEM_ADMIN, SystemRole.HR_ADMIN)
+    @Roles(SystemRole.DEPARTMENT_HEAD, SystemRole.HR_MANAGER, SystemRole.SYSTEM_ADMIN, SystemRole.HR_ADMIN, SystemRole.PAYROLL_MANAGER, SystemRole.PAYROLL_SPECIALIST)
     @Get('attendance-record') // Get all records with filters
     async getAllAttendanceRecords(
     @Query('employeeId') employeeId?: string
