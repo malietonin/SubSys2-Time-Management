@@ -1,4 +1,4 @@
- "use client";
+  "use client";
 
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -161,6 +161,52 @@ export default function TimeExceptionPage() {
       </div>
     );
   }
+const exportToCSV = () => {
+  if (visibleRequests.length === 0) {
+    alert("No requests to export");
+    return;
+  }
+
+  const csvRows: string[] = [];
+
+  csvRows.push([
+    "Request ID",
+    "Employee ID",
+    "Type",
+    "Reason",
+    "Status",
+    "Created At",
+    "Updated At",
+  ].join(","));
+
+  visibleRequests.forEach(req => {
+    csvRows.push([
+      req._id,
+      req.employeeId,
+      req.type,
+      `"${req.reason.replace(/"/g, '""')}"`,
+      req.status,
+      `"${new Date(req.createdAt).toLocaleString()}"`,
+      `"${new Date(req.updatedAt).toLocaleString()}"`,
+    ].join(","));
+  });
+
+  const blob = new Blob([csvRows.join("\n")], {
+    type: "text/csv;charset=utf-8;",
+  });
+
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+
+  link.href = url;
+  link.download = `time-exceptions-${new Date()
+    .toISOString()
+    .split("T")[0]}.csv`;
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
   return (
     <div className="min-h-screen bg-gray-900 p-6">
@@ -168,21 +214,31 @@ export default function TimeExceptionPage() {
         <Link href="/time-management/attendance" className="text-blue-400">
           ← Back to Attendance Records
         </Link>
+ <div className="flex justify-between items-center mt-4">
+  <h1 className="text-3xl font-bold text-white">
+    Time Exception Requests
+  </h1>
 
-        <div className="flex justify-between items-center mt-4">
-          <h1 className="text-3xl font-bold text-white">
-            Time Exception Requests
-          </h1>
+  <div className="flex gap-2">
+    {canRead && (
+      <button
+        onClick={exportToCSV}
+        className="bg-green-600 px-4 py-2 text-white rounded"
+      >
+        📊 Export CSV
+      </button>
+    )}
 
-          {isEmployee && (
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 px-4 py-2 text-white rounded"
-            >
-              ➕ Submit Request
-            </button>
-          )}
-        </div>
+    {isEmployee && (
+      <button
+        onClick={() => setShowCreateModal(true)}
+        className="bg-blue-600 px-4 py-2 text-white rounded"
+      >
+        ➕ Submit Request
+      </button>
+    )}
+  </div>
+</div>
 
         <div className="mt-4">
           <select
@@ -241,15 +297,7 @@ export default function TimeExceptionPage() {
                 </div>
               )}
 
-              {isEmployee && req.status === "PENDING" && (
-  <button
-    onClick={() => setSelectedRequest(req)}
-    className="mt-2 bg-yellow-600 px-3 py-1 text-white rounded"
-  >
-    ✏ Edit
-  </button>
-)}
-
+   
             </div>
           ))}
         </div>
@@ -374,6 +422,7 @@ else {
           >
             Cancel
           </button>
+          
         </div>
       </form>
     </div>
