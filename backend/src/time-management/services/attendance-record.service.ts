@@ -105,10 +105,10 @@ export class AttendanceRecordService {
     today.setHours(0, 0, 0, 0);
 
     // Get or create today's attendance record
-    let record = await this.attendanceModel.findOne({
+   let record = await this.attendanceModel.findOne({
       employeeId: new Types.ObjectId(dto.employeeId),
       'punches.time': { $gte: today, $lt: new Date(today.getTime() + 86400000) },
-    });
+     }); 
 
     if (!record) {
       throw new NotFoundException('No attendance record found for today.');
