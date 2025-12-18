@@ -122,34 +122,35 @@ export default function TimeExceptionPage() {
   /* ===================== ACTIONS ===================== */
 
   const handleApprove = async (id: string) => {
-    await axios.patch(
-      `http://localhost:4000/time-management/time-exception/${id}/approve`,
-      {},
-      { withCredentials: true }
-    );
-    fetchRequests();
-  };
+  await axios.patch(
+    `http://localhost:4000/time-management/time-exception/${id}/approve`,
+    {},
+    { withCredentials: true }
+  );
+  fetchRequests();
+};
 
-  const handleReject = async (id: string) => {
-    const reason = prompt("Reject reason?");
-    if (!reason) return;
 
-    await axios.patch(
-      `http://localhost:4000/time-management/time-exception/${id}/reject`,
-      { reason },
-      { withCredentials: true }
-    );
-    fetchRequests();
-  };
 
-  const handleEscalate = async (id: string) => {
-    await axios.patch(
-      `http://localhost:4000/time-management/time-exception/${id}/escalate`,
-      {},
-      { withCredentials: true }
-    );
-    fetchRequests();
-  };
+   const handleReject = async (id: string) => {
+  const reason = prompt("Reject reason?");
+  if (!reason) return;
+
+  await axios.patch(
+    `http://localhost:4000/time-management/time-exception/${id}/reject`,
+    { reason },
+    { withCredentials: true }
+  );
+  fetchRequests();
+};
+ const handleEscalate = async (id: string) => {
+  await axios.patch(
+    `http://localhost:4000/time-management/time-exception/${id}/escalate`,
+    {},
+    { withCredentials: true }
+  );
+  fetchRequests();
+};
 
   /* ===================== UI ===================== */
 
@@ -240,15 +241,15 @@ export default function TimeExceptionPage() {
                 </div>
               )}
 
-              {isEmployee &&
-                ["OPEN", "PENDING", "ESCALATED"].includes(req.status) && (
-                  <button
-                    onClick={() => setSelectedRequest(req)}
-                    className="mt-2 bg-yellow-600 px-3 py-1 text-white rounded"
-                  >
-                    ✏ Edit
-                  </button>
-                )}
+              {isEmployee && req.status === "PENDING" && (
+  <button
+    onClick={() => setSelectedRequest(req)}
+    className="mt-2 bg-yellow-600 px-3 py-1 text-white rounded"
+  >
+    ✏ Edit
+  </button>
+)}
+
             </div>
           ))}
         </div>
@@ -292,32 +293,40 @@ function TimeExceptionModal({
   const [reason, setReason] = useState(request?.reason || "");
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
+     const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setSubmitting(true);
 
-    try {
-      if (request) {
-        await axios.patch(
-          `http://localhost:4000/time-management/time-exception/${request._id}`,
-          { type, reason },
-          { withCredentials: true }
-        );
-      } else {
-        await axios.post(
-          "http://localhost:4000/time-management/time-exception",
-          { employeeId, type, reason },
-          { withCredentials: true }
-        );
-      }
-      onSuccess();
-    } catch (err) {
-      console.error("Submit error:", err);
-      alert("Failed to submit request");
-    } finally {
-      setSubmitting(false);
+  try {
+     if (request) {
+  await axios.patch(
+    `http://localhost:4000/time-management/time-exception/${request._id}`,
+    {
+      type,
+      reason,
+    },
+    { withCredentials: true }
+  );
+}
+else {
+      // ✅ CREATE
+      await axios.post(
+        `http://localhost:4000/time-management/time-exception`,
+        { employeeId, type, reason },
+        { withCredentials: true }
+      );
     }
-  };
+
+    onSuccess();
+  } catch (err: any) {
+    console.error("Edit error:", err);
+    alert(err.response?.data?.message || "Failed to submit request");
+  } finally {
+    setSubmitting(false);
+  }
+};
+
+
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center">
