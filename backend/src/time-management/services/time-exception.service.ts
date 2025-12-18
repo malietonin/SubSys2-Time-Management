@@ -22,7 +22,7 @@ export class TimeExceptionService {
       reason: dto.reason,
       status: TimeExceptionStatus.PENDING,
     });
-
+    
     return {
       success: true,
       message: 'Time Exception submitted successfully!',
@@ -30,15 +30,14 @@ export class TimeExceptionService {
     };
   }
 
+ 
+
   // Employee updates a pending time exception
   async updateTimeException(id: string, dto: TimeExceptionUpdateDto) {
     const exception = await this.timeExceptionModel.findById(id);
     if (!exception) throw new NotFoundException('Time Exception not found');
-    if (
-      exception.status !== TimeExceptionStatus.OPEN &&
-      exception.status !== TimeExceptionStatus.ESCALATED
-    ) {
-      throw new BadRequestException('Only pending or escalated exceptions can be updated');
+    if (exception.status !== TimeExceptionStatus.PENDING) {
+      throw new BadRequestException('Only PENDING exceptions can be updated.');
     }
 
     if (dto.reason !== undefined) exception.reason = dto.reason;
@@ -58,7 +57,7 @@ export class TimeExceptionService {
   async approve(id: string, approverId: string) {
     const exception = await this.timeExceptionModel.findById(id);
     if (!exception) throw new NotFoundException('Time Exception not found');
-    if (exception.status!=="PENDING" && exception.status!=="ESCALATED") {
+    if (exception.status !== TimeExceptionStatus.PENDING && exception.status !== TimeExceptionStatus.ESCALATED) {
       throw new BadRequestException('Only pending or escalated exceptions can be approved');
     }
 
@@ -80,7 +79,7 @@ export class TimeExceptionService {
   async reject(id: string, approverId: string, reason: string) {
     const exception = await this.timeExceptionModel.findById(id);
     if (!exception) throw new NotFoundException('Time Exception not found');
-    if (exception.status!=="PENDING" && exception.status!=="ESCALATED") {
+    if (exception.status !== TimeExceptionStatus.PENDING && exception.status !== TimeExceptionStatus.ESCALATED) {
       throw new BadRequestException('Only pending or escalated exceptions can be rejected');
     }
 
@@ -97,8 +96,8 @@ export class TimeExceptionService {
     async open(id: string, approverId: string) {
     const exception = await this.timeExceptionModel.findById(id);
     if (!exception) throw new NotFoundException('Time Exception not found');
-    if (exception.status!=="PENDING") {
-      throw new BadRequestException('Only pending or escalated exceptions can be opened');
+    if (exception.status !== TimeExceptionStatus.PENDING) {
+      throw new BadRequestException('Only pending exceptions can be opened');
     }
 
     exception.status = TimeExceptionStatus.OPEN;
@@ -107,6 +106,24 @@ export class TimeExceptionService {
     return {
       success: true,
       message: 'Time Exception opened successfully!',
+      data: exception,
+    };
+  }
+
+  // Escalate a time exception
+  async escalate(id: string) {
+    const exception = await this.timeExceptionModel.findById(id);
+    if (!exception) {
+      throw new NotFoundException('Time Exception not found!');
+    }
+
+   
+    exception.status = TimeExceptionStatus.ESCALATED;
+    await exception.save();
+
+    return {
+      success: true,
+      message: 'Time Exception escalated successfully!',
       data: exception,
     };
   }
@@ -132,6 +149,7 @@ export class TimeExceptionService {
 
     const updated = await this.timeExceptionModel.updateMany(
       {
+        createdAt: { $lt: cutoff },
         status: TimeExceptionStatus.OPEN,
       },
       {
